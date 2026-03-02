@@ -1,0 +1,2021 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BASEBALL SIM // TACTICAL</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;700;900&family=Share+Tech+Mono&display=swap');
+:root{
+  --void:#0a0b0f;--deep:#0f1117;--panel:#13161f;--panel2:#181c28;--surface:#1e2235;
+  --red:#ff4655;--red-dim:#cc2233;--red-glow:rgba(255,70,85,0.15);
+  --cyan:#00e5ff;--gold:#ffe082;--green:#69f0ae;
+  --text:#ece8e1;--text-dim:#768079;--text-muted:#4a5261;
+  --border:#2a2f3e;--border-bright:#3d4459;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--void);color:var(--text);font-family:'Rajdhani','Noto Sans JP',sans-serif;min-height:100vh;overflow:hidden;font-size:13px}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.025) 2px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:9999}
+
+/* HEADER */
+#hdr{position:fixed;top:0;left:0;right:0;height:54px;background:var(--deep);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:18px;z-index:500}
+#hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--red) 0%,transparent 55%)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-hex{width:30px;height:30px;background:var(--red);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.logo-txt{font-family:'Rajdhani';font-weight:700;font-size:17px;letter-spacing:4px;color:#fff;text-transform:uppercase}
+.logo-sub{font-family:'Share Tech Mono';font-size:8px;color:var(--red);letter-spacing:2px}
+.hd{width:1px;height:28px;background:var(--border-bright)}
+.hs{display:flex;flex-direction:column}
+.hs-l{font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted);letter-spacing:2px}
+.hs-v{font-family:'Rajdhani';font-weight:700;font-size:15px;color:var(--gold);letter-spacing:1px}
+.hright{margin-left:auto;display:flex;align-items:center;gap:16px}
+.hbadge{font-family:'Share Tech Mono';font-size:9px;color:var(--text-dim);letter-spacing:1px}
+.hbadge span{color:var(--cyan)}
+.h-week-btn{font-family:'Rajdhani';font-weight:700;font-size:11px;letter-spacing:2px;text-transform:uppercase;padding:6px 14px;background:transparent;border:1px solid var(--border-bright);color:var(--text-dim);cursor:pointer;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);transition:all .15s}
+.h-week-btn:hover{border-color:var(--red);color:var(--red)}
+.h-fs-btn{font-family:'Rajdhani';font-weight:700;font-size:14px;padding:6px 10px;background:transparent;border:1px solid var(--border-bright);color:var(--text-muted);cursor:pointer;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);transition:all .15s;line-height:1}
+.h-fs-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* LAYOUT */
+#app{display:flex;height:100vh;padding-top:54px}
+#sidebar{width:210px;background:var(--deep);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 0;position:relative;flex-shrink:0}
+#sidebar::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:linear-gradient(180deg,var(--red) 0%,transparent 40%)}
+.nsec{font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted);letter-spacing:3px;padding:8px 18px 5px;text-transform:uppercase}
+.ni{position:relative;display:flex;align-items:center;gap:10px;padding:10px 18px;cursor:pointer;color:var(--text-dim);font-family:'Rajdhani';font-weight:600;font-size:13px;letter-spacing:1px;text-transform:uppercase;transition:all .15s;border-left:2px solid transparent}
+.ni:hover{color:#fff;background:linear-gradient(90deg,rgba(255,70,85,.08),transparent);border-left-color:var(--red-dim)}
+.ni.active{color:var(--red);background:linear-gradient(90deg,rgba(255,70,85,.12),transparent);border-left-color:var(--red)}
+.ni.active::after{content:'';position:absolute;right:0;top:50%;transform:translateY(-50%);width:4px;height:4px;background:var(--red);box-shadow:0 0 8px var(--red)}
+#main{flex:1;overflow-y:auto;padding:18px 20px;background:var(--void)}
+#main::-webkit-scrollbar{width:3px}
+#main::-webkit-scrollbar-thumb{background:var(--red-dim)}
+.page{display:none;animation:pIn .18s ease}
+.page.active{display:block}
+@keyframes pIn{from{opacity:0;transform:translateX(5px)}to{opacity:1;transform:translateX(0)}}
+
+/* PAGE TITLE */
+.ptitle{display:flex;align-items:flex-end;gap:10px;margin-bottom:18px}
+.ptitle-main{line-height:1}
+.ptitle-sub2{font-family:'Share Tech Mono';font-size:9px;color:var(--red);letter-spacing:2px;margin-bottom:4px}
+.ptitle-txt{font-family:'Rajdhani';font-weight:700;font-size:26px;letter-spacing:4px;text-transform:uppercase;color:#fff}
+.ptitle-line{flex:1;height:1px;background:linear-gradient(90deg,var(--red),transparent);margin-bottom:4px}
+
+/* CARDS */
+.vc{background:var(--panel);border:1px solid var(--border);clip-path:polygon(12px 0%,100% 0%,100% calc(100% - 12px),calc(100% - 12px) 100%,0% 100%,0% 12px);padding:14px;margin-bottom:10px;position:relative}
+.vc::before{content:'';position:absolute;top:0;left:0;width:36px;height:1px;background:var(--red)}
+.vct{font-family:'Share Tech Mono';font-size:9px;color:var(--red);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.vct::before{content:'//';color:var(--text-muted)}
+
+/* ROSTER GRID */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:7px}
+.pc{background:var(--panel);border:1px solid var(--border);clip-path:polygon(10px 0%,100% 0%,100% calc(100% - 10px),calc(100% - 10px) 100%,0% 100%,0% 10px);padding:12px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.pc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--pc,var(--red));opacity:.5;transition:opacity .15s}
+.pc:hover{border-color:var(--red);background:var(--panel2)}
+.pc:hover::before{opacity:1}
+.pc-h{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.pc-num{font-family:'Rajdhani';font-weight:700;font-size:24px;color:var(--pc,var(--red));line-height:1;min-width:32px;text-align:center;text-shadow:0 0 16px var(--pc,var(--red))}
+.pc-n{font-weight:700;font-size:14px;color:#fff}
+.pc-row{display:flex;align-items:center;gap:5px;margin-top:2px;flex-wrap:wrap}
+.pbadge{font-family:'Share Tech Mono';font-size:9px;padding:1px 5px;background:rgba(255,70,85,.15);color:var(--red);clip-path:polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)}
+.phand{font-size:10px;color:var(--text-dim)}
+.pspe{font-family:'Share Tech Mono';font-size:8px;color:var(--gold);background:rgba(255,224,130,.1);padding:1px 4px;clip-path:polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%)}
+.pc-ovr{font-family:'Rajdhani';font-weight:700;font-size:30px;line-height:1;color:var(--text-muted);margin-left:auto}
+.pp{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}
+.ppar{text-align:center}
+.ppar-l{font-family:'Share Tech Mono';font-size:7px;color:var(--text-muted);letter-spacing:1px}
+.ppar-v{font-family:'Rajdhani';font-weight:700;font-size:16px;line-height:1}
+.ppar-b{height:2px;background:var(--border);margin-top:2px}
+.ppar-bf{height:100%}
+.cb-wrap{display:flex;align-items:center;gap:6px;margin-top:7px}
+.cb{flex:1;height:2px;background:var(--border)}
+.cb-f{height:100%}
+
+/* GRADE COLORS */
+.gS{color:#ff6b35}.gA{color:#ff4655}.gB{color:#ffe082}.gC{color:#00e5ff}.gD{color:var(--text-dim)}
+
+/* TABS */
+.vt{display:flex;gap:2px;margin-bottom:14px}
+.vtab{padding:7px 18px;font-family:'Rajdhani';font-weight:600;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);cursor:pointer;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);transition:all .15s;background:var(--panel)}
+.vtab:hover{color:#fff;background:var(--surface)}
+.vtab.active{color:var(--void);background:var(--red)}
+
+/* FORMS */
+.vfr{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.vfg{flex:1;min-width:120px}
+.vfg label{display:block;font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+.vfg select,.vfg input{width:100%;background:var(--panel2);border:1px solid var(--border);border-bottom:1px solid var(--red-dim);color:var(--text);padding:7px 9px;font-family:'Rajdhani','Noto Sans JP',sans-serif;font-size:13px;font-weight:500;clip-path:polygon(5px 0%,100% 0%,100% calc(100% - 5px),calc(100% - 5px) 100%,0% 100%,0% 5px);outline:none;transition:border-color .15s}
+.vfg select:focus,.vfg input:focus{border-color:var(--red);background:var(--surface)}
+
+/* BUTTONS */
+.vb{font-family:'Rajdhani';font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;padding:8px 18px;border:none;cursor:pointer;clip-path:polygon(7px 0%,100% 0%,calc(100% - 7px) 100%,0% 100%);transition:all .15s}
+.vbp{background:var(--red);color:var(--void)}
+.vbp:hover{background:#ff6070;box-shadow:0 0 18px rgba(255,70,85,.4)}
+.vbg{background:transparent;color:var(--text-dim);border:1px solid var(--border-bright)}
+.vbg:hover{color:#fff;border-color:var(--red)}
+.vbs{padding:5px 11px;font-size:10px}
+.vbc{background:var(--cyan);color:var(--void)}
+.vbgr{background:var(--green);color:var(--void)}
+
+/* PARAM PREVIEW */
+.prow{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.prow-n{font-family:'Share Tech Mono';font-size:9px;color:var(--text-muted);width:68px;letter-spacing:1px}
+.prow-b{flex:1;height:3px;background:var(--border);position:relative}
+.prow-bf{height:100%;position:absolute;left:0;top:0;transition:width .4s ease}
+.prow-v{font-family:'Rajdhani';font-weight:700;font-size:15px;width:26px;text-align:right}
+
+/* MATCH / SIM */
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.sim-arena{background:var(--panel);border:1px solid var(--border);clip-path:polygon(14px 0%,100% 0%,100% calc(100% - 14px),calc(100% - 14px) 100%,0% 100%,0% 14px);padding:20px;margin-bottom:10px;position:relative;overflow:hidden}
+.sim-arena::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 115%,rgba(0,80,20,.3) 0%,transparent 55%),repeating-linear-gradient(45deg,transparent,transparent 18px,rgba(255,255,255,.008) 18px,rgba(255,255,255,.008) 19px);pointer-events:none}
+.scoreboard{display:flex;align-items:center;justify-content:center;gap:20px;margin-bottom:14px}
+.score-side{text-align:center}
+.score-tn{font-family:'Share Tech Mono';font-size:9px;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:3px}
+.score-r{font-family:'Rajdhani';font-weight:700;font-size:68px;line-height:1;color:#fff}
+.score-r.home{color:var(--red);text-shadow:0 0 36px rgba(255,70,85,.5)}
+.score-sep{font-family:'Rajdhani';font-size:28px;color:var(--text-muted)}
+.itag{font-family:'Share Tech Mono';font-size:10px;color:var(--cyan);letter-spacing:2px;text-align:center;margin-bottom:10px}
+.hud-row{display:flex;align-items:center;justify-content:center;gap:20px}
+.base-d{width:14px;height:14px;border:1px solid var(--border-bright);transform:rotate(45deg);transition:all .2s;position:absolute}
+.base-d.b1{bottom:2px;right:0}
+.base-d.b2{top:0;left:50%;transform:translateX(-50%) rotate(45deg)}
+.base-d.b3{bottom:2px;left:0}
+.base-d.on{background:var(--gold);border-color:var(--gold);box-shadow:0 0 10px var(--gold)}
+.chud{font-family:'Share Tech Mono';font-size:10px;color:var(--text-muted);text-align:center}
+.chud .vals{font-family:'Rajdhani';font-weight:700;font-size:18px;color:#fff;letter-spacing:2px;margin-top:1px}
+.bhud{font-family:'Share Tech Mono';font-size:10px;color:var(--text-muted);text-align:center;letter-spacing:1px;max-width:160px}
+.slog{background:rgba(0,0,0,.55);border:1px solid var(--border);border-left:2px solid var(--red-dim);padding:10px;height:160px;overflow-y:auto;font-family:'Share Tech Mono';font-size:10px;line-height:1.85}
+.slog::-webkit-scrollbar{width:2px}
+.slog::-webkit-scrollbar-thumb{background:var(--red-dim)}
+.ll{padding:1px 0}
+.lev{color:var(--cyan)}.lot{color:#ff8a80}.lht{color:var(--green)}.lhr{color:var(--gold)}.linf{color:var(--text-muted)}
+
+/* STANDINGS */
+.sw{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ll-lbl{font-family:'Share Tech Mono';font-size:9px;letter-spacing:3px;text-transform:uppercase;padding:5px 0;margin-bottom:7px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px}
+.ll-dot{width:5px;height:5px;background:var(--red)}
+.st{width:100%;border-collapse:collapse}
+.st th{font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted);letter-spacing:2px;text-transform:uppercase;padding:6px 7px;text-align:center;border-bottom:1px solid var(--border)}
+.st td{padding:8px 7px;text-align:center;font-family:'Rajdhani';font-size:13px;font-weight:600;border-bottom:1px solid rgba(42,47,62,.5)}
+.st tr:hover td{background:var(--panel2)}
+.st td:first-child{text-align:left}.st td:nth-child(2){text-align:left;font-weight:700}
+.r1{color:var(--red)}.r2{color:#ccc}.r3{color:#c7994a}
+.my-row td{background:rgba(255,70,85,.07)!important}
+
+/* MATCH RECORD */
+.mrec{display:flex;align-items:center;gap:10px;padding:9px 13px;border-bottom:1px solid var(--border);transition:background .1s}
+.mrec:hover{background:var(--panel2)}
+.rbadge{font-family:'Rajdhani';font-weight:700;font-size:12px;letter-spacing:1px;width:32px;text-align:center;clip-path:polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%);padding:3px 0}
+.rW{background:rgba(105,240,174,.15);color:var(--green)}.rL{background:rgba(255,70,85,.15);color:var(--red)}.rD{background:rgba(255,224,130,.15);color:var(--gold)}
+.msc{font-family:'Rajdhani';font-weight:700;font-size:20px;color:#fff;letter-spacing:1px}
+.mvs{font-size:10px;color:var(--text-muted)}.mopp{font-weight:700}
+.mdt{margin-left:auto;font-family:'Share Tech Mono';font-size:9px;color:var(--text-muted)}
+
+/* TRAINING */
+.tg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.tcard{background:var(--panel2);border:1px solid var(--border);clip-path:polygon(8px 0%,100% 0%,100% calc(100% - 8px),calc(100% - 8px) 100%,0% 100%,0% 8px);padding:12px 10px;cursor:pointer;transition:all .15s;text-align:center}
+.tcard:hover{border-color:var(--red);background:var(--surface);box-shadow:0 0 16px rgba(255,70,85,.1)}
+.ticon{font-size:20px;margin-bottom:5px}
+.tname{font-family:'Rajdhani';font-weight:700;font-size:13px;letter-spacing:1px;color:#fff;margin-bottom:3px}
+.teff{font-family:'Share Tech Mono';font-size:9px;color:var(--green);letter-spacing:1px}
+.tcost{font-family:'Share Tech Mono';font-size:9px;color:var(--text-muted);margin-top:3px}
+
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:900;display:flex;align-items:center;justify-content:center}
+.mbox{background:var(--panel);border:1px solid var(--border-bright);clip-path:polygon(18px 0%,100% 0%,100% calc(100% - 18px),calc(100% - 18px) 100%,0% 100%,0% 18px);padding:24px;width:92%;max-width:620px;max-height:88vh;overflow-y:auto;position:relative;animation:mIn .18s ease}
+.mbox::before{content:'';position:absolute;top:0;left:0;width:70px;height:2px;background:var(--red)}
+.mbox::after{content:'';position:absolute;bottom:0;right:0;width:35px;height:2px;background:var(--red-dim)}
+@keyframes mIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.mhdr{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px}
+.mnum{font-family:'Rajdhani';font-weight:700;font-size:52px;line-height:1;text-shadow:0 0 28px currentColor}
+.mpname{font-family:'Rajdhani';font-weight:700;font-size:24px;color:#fff;letter-spacing:2px}
+.mpsub{font-family:'Share Tech Mono';font-size:10px;color:var(--text-muted);letter-spacing:2px;margin-top:3px}
+.mchips{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.mchip{font-family:'Share Tech Mono';font-size:8px;padding:2px 7px;clip-path:polygon(3px 0%,100% 0%,calc(100% - 3px) 100%,0% 100%);background:var(--panel2);color:var(--text-dim);border:1px solid var(--border-bright)}
+.mchip.red{background:rgba(255,70,85,.1);color:var(--red);border-color:var(--red-dim)}
+.movr{margin-left:auto;text-align:center}
+.movrl{font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted);letter-spacing:3px}
+.movrv{font-family:'Rajdhani';font-weight:700;font-size:56px;line-height:1;color:var(--red);text-shadow:0 0 28px rgba(255,70,85,.5)}
+.mgrade{font-family:'Rajdhani';font-weight:700;font-size:18px;letter-spacing:2px}
+.divl{height:1px;background:linear-gradient(90deg,var(--red-dim),transparent);margin:14px 0}
+
+/* NOTIF */
+.notif{position:fixed;top:62px;right:18px;background:var(--panel);border:1px solid var(--border-bright);border-left:3px solid var(--red);clip-path:polygon(0% 0%,calc(100% - 9px) 0%,100% 9px,100% 100%,0% 100%);padding:10px 14px;z-index:800;font-family:'Rajdhani';font-weight:600;font-size:13px;letter-spacing:1px;max-width:300px;animation:nIn .22s ease}
+@keyframes nIn{from{transform:translateX(105%)}to{transform:translateX(0)}}
+
+/* SCHEDULE */
+.wr{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px}
+.wcell{background:var(--panel2);border:1px solid var(--border);clip-path:polygon(5px 0%,100% 0%,100% calc(100% - 5px),calc(100% - 5px) 100%,0% 100%,0% 5px);padding:7px 3px;text-align:center}
+.wdn{font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:3px}
+.wg{font-family:'Rajdhani';font-size:10px;font-weight:600;color:var(--red);background:rgba(255,70,85,.1);padding:2px 0}
+
+/* GRID UTILS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.flex{display:flex}.fxc{display:flex;align-items:center}.fxb{display:flex;justify-content:space-between;align-items:center}
+.gap6{gap:6px}.gap8{gap:8px}.mb6{margin-bottom:6px}.mb10{margin-bottom:10px}.mt8{margin-top:8px}.mt10{margin-top:10px}.fw7{font-weight:700}
+.mono{font-family:'Share Tech Mono',monospace}.sm{font-size:10px}.xs{font-size:9px}
+.tr{color:var(--red)}.td{color:var(--text-dim)}.tm{color:var(--text-muted)}.tc{color:var(--cyan)}.tg{color:var(--gold)}.tgr{color:var(--green)}
+.rj{font-family:'Rajdhani',sans-serif}
+
+/* INNING SCOREBOARD TABLE */
+.inn-tbl{border-collapse:collapse;width:100%;min-width:500px}
+.inn-tbl th,.inn-tbl td{font-family:'Share Tech Mono',monospace;font-size:10px;text-align:center;padding:4px 6px;border:1px solid var(--border);min-width:24px}
+.inn-tbl th{color:var(--text-muted);background:var(--panel2);letter-spacing:1px}
+.inn-tbl td{color:#fff;font-weight:700}
+.inn-tbl .team-cell{text-align:left;padding-left:8px;font-family:'Rajdhani';font-weight:700;font-size:12px;min-width:70px}
+.inn-tbl .total-cell{color:var(--gold);background:rgba(255,224,130,.06);font-size:12px}
+.inn-tbl .active-inn{background:rgba(255,70,85,.12);color:var(--red)}
+/* BSO dots */
+.bso-grp{display:flex;flex-direction:column;align-items:center}
+.bso-dot{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--border-bright);background:transparent;transition:all .2s}
+.bso-dot.on-b{background:#69f0ae;border-color:#69f0ae;box-shadow:0 0 8px #69f0ae}
+.bso-dot.on-s{background:#ffe082;border-color:#ffe082;box-shadow:0 0 8px #ffe082}
+.bso-dot.on-o{background:#ff4655;border-color:#ff4655;box-shadow:0 0 8px #ff4655}
+/* Base on/off */
+.base-on{fill:#ffe082!important;stroke:#ffb300!important;filter:drop-shadow(0 0 6px #ffe082)}
+/* Ball animation */
+@keyframes ballFly{0%{opacity:1;r:5}50%{r:7}100%{opacity:0;r:4}}
+@keyframes flashIn{0%{opacity:.8}100%{opacity:0;transform:scale(2)}}
+/* Play badge */
+@keyframes badgeIn{0%{opacity:0;transform:translateX(10px)}30%{opacity:1;transform:translateX(0)}80%{opacity:1}100%{opacity:0}}
+
+/* WEEK ADVANCE OVERLAY */
+.wov{position:fixed;inset:0;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;animation:wovIn .3s ease}
+@keyframes wovIn{from{opacity:0}to{opacity:1}}
+.wov-title{font-family:'Rajdhani';font-weight:700;font-size:42px;letter-spacing:8px;color:var(--red);text-transform:uppercase;text-shadow:0 0 40px rgba(255,70,85,.6)}
+.wov-sub{font-family:'Share Tech Mono';font-size:12px;color:var(--text-muted);letter-spacing:3px}
+.wov-results{background:var(--panel);border:1px solid var(--border);clip-path:polygon(12px 0%,100% 0%,100% calc(100% - 12px),calc(100% - 12px) 100%,0% 100%,0% 12px);padding:20px;min-width:400px;max-width:500px;max-height:60vh;overflow-y:auto}
+.wov-match{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.wov-match:last-child{border-bottom:none}
+</style>
+</head>
+<body>
+
+<div id="hdr">
+  <div class="logo">
+    <div class="logo-hex">⚾</div>
+    <div>
+      <div class="logo-txt">Baseball Sim</div>
+      <div class="logo-sub">// TACTICAL EDITION</div>
+    </div>
+  </div>
+  <div class="hd"></div>
+  <div class="hs"><div class="hs-l">SEASON</div><div class="hs-v" id="hSeason">2024</div></div>
+  <div class="hd"></div>
+  <div class="hs"><div class="hs-l">WEEK</div><div class="hs-v" id="hWeek">W01</div></div>
+  <div class="hd"></div>
+  <div class="hs"><div class="hs-l">BUDGET</div><div class="hs-v" id="hBudget">¥5.0B</div></div>
+  <div class="hd"></div>
+  <div class="hs"><div class="hs-l">RECORD</div><div class="hs-v" id="hRecord">0W 0L 0D</div></div>
+  <div class="hright">
+    <div class="hbadge">HOSHIZA <span>BEARS</span> // PACIFIC</div>
+    <button class="h-week-btn" onclick="advanceWeek()">▶ NEXT WEEK</button>
+    <button class="h-fs-btn" id="fsbtn" onclick="toggleFS()" title="フルスクリーン">⛶</button>
+  </div>
+</div>
+
+<div id="app">
+  <div id="sidebar">
+    <div class="nsec">Management</div>
+    <div class="ni active" data-p="roster" onclick="sp('roster',this)"><span>⬡</span> Roster</div>
+    <div class="ni" data-p="create" onclick="sp('create',this)"><span>⊕</span> Scout</div>
+    <div class="nsec" style="margin-top:6px">Game</div>
+    <div class="ni" data-p="match" onclick="sp('match',this)"><span>◈</span> Match</div>
+    <div class="ni" data-p="standings" onclick="sp('standings',this)"><span>▦</span> Standings</div>
+    <div class="ni" data-p="schedule" onclick="sp('schedule',this)"><span>⊟</span> Schedule</div>
+    <div class="nsec" style="margin-top:6px">Development</div>
+    <div class="ni" data-p="training" onclick="sp('training',this)"><span>⟳</span> Training</div>
+    <div class="ni" data-p="stats" onclick="sp('stats',this)"><span>≡</span> Stats</div>
+  </div>
+
+  <div id="main">
+
+    <!-- ROSTER -->
+    <div id="page-roster" class="page active">
+      <div class="ptitle">
+        <div class="ptitle-main"><div class="ptitle-sub2">// TEAM DATA</div><div class="ptitle-txt">Roster</div></div>
+        <div class="ptitle-line"></div>
+        <div class="mono xs tm">一軍 <span class="tr" id="ichiC">0</span>/25 &nbsp;|&nbsp; 二軍 <span class="tr" id="niC">0</span>/30</div>
+      </div>
+      <div class="vt">
+        <div class="vtab active" onclick="rTab('ichi',this)">一軍 ACTIVE</div>
+        <div class="vtab" onclick="rTab('ni',this)">二軍 MINOR</div>
+      </div>
+      <div id="richi" class="rgrid"></div>
+      <div id="rni" class="rgrid" style="display:none"></div>
+    </div>
+
+    <!-- SCOUT -->
+    <div id="page-create" class="page">
+      <div class="ptitle">
+        <div class="ptitle-main"><div class="ptitle-sub2">// NEW AGENT</div><div class="ptitle-txt">Scout</div></div>
+        <div class="ptitle-line"></div>
+      </div>
+      <div class="g2">
+        <div>
+          <div class="vc">
+            <div class="vct">Identity</div>
+            <div class="vfr">
+              <div class="vfg" style="flex:2"><label>選手名</label><input type="text" id="cn" placeholder="田中 大輝"/></div>
+              <div class="vfg"><label>背番号</label><input type="number" id="cnum" min="1" max="99" placeholder="18"/></div>
+            </div>
+            <div class="vfr">
+              <div class="vfg"><label>Position</label><select id="cpos">
+                <option value="SP">先発投手 SP</option><option value="RP">中継ぎ RP</option><option value="CL">抑え CL</option>
+                <option value="C">捕手 C</option><option value="1B">一塁手 1B</option><option value="2B">二塁手 2B</option>
+                <option value="3B">三塁手 3B</option><option value="SS">遊撃手 SS</option><option value="LF">左翼手 LF</option>
+                <option value="CF">中堅手 CF</option><option value="RF">右翼手 RF</option><option value="DH">指名打者 DH</option>
+              </select></div>
+              <div class="vfg"><label>利き手</label><select id="chand">
+                <option value="右投右打">右投右打</option><option value="右投左打">右投左打</option>
+                <option value="左投左打">左投左打</option><option value="左投右打">左投右打</option><option value="両打ち">両打ち</option>
+              </select></div>
+            </div>
+          </div>
+          <div class="vc">
+            <div class="vct">Metadata // Stat Modifiers</div>
+            <div class="vfr">
+              <div class="vfg"><label>血液型</label><select id="cblood">
+                <option value="A">A型</option><option value="B">B型</option><option value="O">O型</option><option value="AB">AB型</option>
+              </select></div>
+              <div class="vfg"><label>星座</label><select id="czodiac">
+                <option value="牡羊座">牡羊座</option><option value="牡牛座">牡牛座</option><option value="双子座">双子座</option><option value="蟹座">蟹座</option>
+                <option value="獅子座">獅子座</option><option value="乙女座">乙女座</option><option value="天秤座">天秤座</option><option value="蠍座">蠍座</option>
+                <option value="射手座">射手座</option><option value="山羊座">山羊座</option><option value="水瓶座">水瓶座</option><option value="魚座">魚座</option>
+              </select></div>
+              <div class="vfg"><label>出身地</label><select id="cht">
+                <option value="北海道">北海道</option><option value="東北">東北</option><option value="関東">関東</option><option value="中部">中部</option>
+                <option value="関西">関西</option><option value="中国">中国</option><option value="四国">四国</option><option value="九州">九州</option>
+                <option value="沖縄">沖縄</option><option value="海外">海外</option>
+              </select></div>
+            </div>
+            <div class="vfr">
+              <div class="vfg"><label>好きな食べ物</label><select id="cfood">
+                <option value="ラーメン">ラーメン</option><option value="寿司">寿司</option><option value="焼肉">焼肉</option><option value="カレー">カレー</option>
+                <option value="うどん">うどん</option><option value="サラダ">サラダ</option><option value="ステーキ">ステーキ</option><option value="唐揚げ">唐揚げ</option>
+                <option value="そば">そば</option><option value="ピザ">ピザ</option><option value="納豆">納豆</option><option value="プロテイン">プロテイン</option>
+              </select></div>
+              <div class="vfg"><label>性格</label><select id="cpers">
+                <option value="熱血漢">熱血漢</option><option value="冷静沈着">冷静沈着</option><option value="天才肌">天才肌</option><option value="努力家">努力家</option>
+                <option value="ムードメーカー">ムードメーカー</option><option value="職人気質">職人気質</option><option value="野心家">野心家</option>
+                <option value="慎重派">慎重派</option><option value="大雑把">大雑把</option><option value="ガラスのハート">ガラスのハート</option>
+              </select></div>
+              <div class="vfg"><label>経歴</label><select id="cbg">
+                <option value="甲子園出場">甲子園出場</option><option value="大学No.1">大学No.1</option><option value="社会人エース">社会人エース</option>
+                <option value="海外経験あり">海外経験あり</option><option value="ドラフト1位">ドラフト1位</option><option value="育成出身">育成出身</option>
+                <option value="元他球団">元他球団</option><option value="外国人選手">外国人選手</option>
+              </select></div>
+            </div>
+            <div class="vfr">
+              <div class="vfg"><label>趣味</label><select id="chob">
+                <option value="筋トレ">筋トレ</option><option value="読書">読書</option><option value="ゲーム">ゲーム</option><option value="料理">料理</option>
+                <option value="音楽">音楽</option><option value="釣り">釣り</option><option value="ゴルフ">ゴルフ</option>
+                <option value="サッカー">サッカー</option><option value="映画鑑賞">映画鑑賞</option><option value="温泉巡り">温泉巡り</option>
+              </select></div>
+              <div class="vfg" style="flex:2"><label>特殊能力</label><select id="cspe">
+                <option value="なし">なし</option><option value="逆境の男">逆境の男</option><option value="勝負師">勝負師</option>
+                <option value="大舞台に強い">大舞台に強い</option><option value="連投OK">連投OK</option><option value="炎の三振">炎の三振</option>
+                <option value="ホームラン職人">ホームラン職人</option><option value="守備の鬼">守備の鬼</option><option value="盗塁王">盗塁王</option>
+                <option value="代打の神様">代打の神様</option>
+              </select></div>
+            </div>
+            <div class="flex gap8 mt10">
+              <button class="vb vbp" onclick="calcP()">▶ CALCULATE</button>
+              <button class="vb vbg" onclick="randP()">⟳ RANDOM</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="vc" style="min-height:300px">
+            <div class="vct">Parameter Analysis</div>
+            <div id="pprev"><div class="mono xs tm" style="padding:16px 0;text-align:center">// CALCULATEを押してください</div></div>
+          </div>
+          <button class="vb vbp" style="width:100%;display:block;text-align:center" onclick="signP()">⊕ SIGN PLAYER</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MATCH -->
+    <div id="page-match" class="page">
+      <div class="ptitle">
+        <div class="ptitle-main"><div class="ptitle-sub2">// SIMULATION</div><div class="ptitle-txt">Match</div></div>
+        <div class="ptitle-line"></div>
+      </div>
+
+      <!-- PRE-GAME SETUP -->
+      <div id="pregame">
+        <div class="mg">
+          <div class="vc">
+            <div class="vct">Opponent</div>
+            <select id="oppsel" style="width:100%;background:var(--panel2);border:1px solid var(--border);border-bottom:1px solid var(--red-dim);color:var(--text);padding:8px 9px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;clip-path:polygon(5px 0%,100% 0%,100% calc(100% - 5px),calc(100% - 5px) 100%,0% 100%,0% 5px);outline:none"></select>
+            <div class="mono xs tm mt8 mb6">// GAME MODE</div>
+            <div class="flex gap8">
+              <button class="vb vbg vbs am" onclick="setMode('regular',this)">公式戦</button>
+              <button class="vb vbg vbs" onclick="setMode('playoff',this)">CS</button>
+              <button class="vb vbg vbs" onclick="setMode('exhibition',this)">練習試合</button>
+            </div>
+          </div>
+          <div class="vc"><div class="vct">Starting Lineup</div><div id="ldsp" class="mono xs"></div></div>
+        </div>
+        <div class="flex gap8 mb10">
+          <button class="vb vbp" onclick="startSim()">▶ START MATCH</button>
+          <button class="vb vbg" onclick="fastSim()">⚡ FAST SIM</button>
+        </div>
+      </div>
+
+      <!-- LIVE GAME VIEW -->
+      <div id="sarea" style="display:none">
+
+        <!-- TOP: Scoreboard + Inning line -->
+        <div class="vc mb0" style="margin-bottom:8px;padding:12px 16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <div class="mono xs" style="color:var(--cyan);letter-spacing:2px" id="itag">// INNING 1 TOP</div>
+            <div style="flex:1"></div>
+            <!-- BSO -->
+            <div style="display:flex;gap:14px;align-items:center">
+              <div class="bso-grp">
+                <div class="mono" style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:3px">BALL</div>
+                <div style="display:flex;gap:4px" id="ball-lights">
+                  <div class="bso-dot"></div><div class="bso-dot"></div><div class="bso-dot"></div>
+                </div>
+              </div>
+              <div class="bso-grp">
+                <div class="mono" style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:3px">STRIKE</div>
+                <div style="display:flex;gap:4px" id="strike-lights">
+                  <div class="bso-dot"></div><div class="bso-dot"></div>
+                </div>
+              </div>
+              <div class="bso-grp">
+                <div class="mono" style="font-size:8px;color:var(--text-muted);letter-spacing:2px;margin-bottom:3px">OUT</div>
+                <div style="display:flex;gap:4px" id="out-lights">
+                  <div class="bso-dot"></div><div class="bso-dot"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Inning scoreboard table -->
+          <div style="overflow-x:auto">
+            <table class="inn-tbl" id="inn-tbl">
+              <thead><tr id="inn-hdr"></tr></thead>
+              <tbody><tr id="inn-home"></tr><tr id="inn-away"></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- MAIN: Field + Sidebar -->
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:8px;align-items:start">
+
+          <!-- FIELD VISUAL -->
+          <div class="vc" style="padding:0;overflow:hidden;position:relative">
+            <!-- Team nameplate -->
+            <div style="display:flex;padding:8px 14px;border-bottom:1px solid var(--border)">
+              <div style="flex:1">
+                <div class="mono xs tm">HOME</div>
+                <div style="font-family:'Rajdhani';font-weight:700;font-size:16px;color:var(--red)" id="hnm">星座ベアーズ</div>
+              </div>
+              <div style="text-align:center;padding:0 20px">
+                <div class="mono xs tm">SCORE</div>
+                <div style="font-family:'Rajdhani';font-weight:700;font-size:36px;color:#fff;letter-spacing:4px">
+                  <span id="hsc" style="color:var(--red)">0</span>
+                  <span style="color:var(--text-muted);font-size:24px;margin:0 4px">:</span>
+                  <span id="asc">0</span>
+                </div>
+              </div>
+              <div style="flex:1;text-align:right">
+                <div class="mono xs tm">AWAY</div>
+                <div style="font-family:'Rajdhani';font-weight:700;font-size:16px;color:var(--cyan)" id="anm">OPPONENT</div>
+              </div>
+            </div>
+
+            <!-- SVG Baseball Field -->
+            <div style="position:relative;background:#0a0f0a">
+              <svg id="field-svg" viewBox="0 0 400 360" style="width:100%;display:block" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outfield grass -->
+                <path d="M200,320 L20,80 Q200,-20 380,80 Z" fill="#1a3a1a" stroke="#2a5a2a" stroke-width="1"/>
+                <!-- Infield dirt -->
+                <path d="M200,280 L120,200 L200,120 L280,200 Z" fill="#5c3d1e" stroke="#7a5430" stroke-width="1"/>
+                <!-- Foul lines -->
+                <line x1="200" y1="320" x2="20" y2="80" stroke="#4a7a4a" stroke-width="1" stroke-dasharray="6,4" opacity="0.6"/>
+                <line x1="200" y1="320" x2="380" y2="80" stroke="#4a7a4a" stroke-width="1" stroke-dasharray="6,4" opacity="0.6"/>
+                <!-- Infield grass circles -->
+                <circle cx="200" cy="200" r="65" fill="#1e4a1e" stroke="#2a5a2a" stroke-width="1"/>
+                <!-- Pitcher mound -->
+                <circle cx="200" cy="195" r="10" fill="#6b4820" stroke="#8a6030" stroke-width="1"/>
+                <circle cx="200" cy="195" r="3" fill="#c8a060"/>
+                <!-- Home plate -->
+                <polygon points="200,310 193,302 193,294 207,294 207,302" fill="#e8e8e8" stroke="#ccc" stroke-width="0.5"/>
+                <!-- Bases -->
+                <rect id="base1" x="268" y="191" width="14" height="14" rx="1" fill="#3a2a10" stroke="#c8a060" stroke-width="1.5" transform="rotate(45,275,198)"/>
+                <rect id="base2" x="193" y="112" width="14" height="14" rx="1" fill="#3a2a10" stroke="#c8a060" stroke-width="1.5" transform="rotate(45,200,119)"/>
+                <rect id="base3" x="118" y="191" width="14" height="14" rx="1" fill="#3a2a10" stroke="#c8a060" stroke-width="1.5" transform="rotate(45,125,198)"/>
+                <!-- Outfield wall arc label -->
+                <path id="wall-arc" d="M40,90 Q200,-15 360,90" fill="none" stroke="#3a6a3a" stroke-width="6" opacity="0.4"/>
+                <!-- Distance markers -->
+                <text x="65" y="72" fill="#4a8a4a" font-size="9" font-family="monospace" text-anchor="middle" opacity="0.7">95m</text>
+                <text x="200" y="25" fill="#4a8a4a" font-size="9" font-family="monospace" text-anchor="middle" opacity="0.7">122m</text>
+                <text x="335" y="72" fill="#4a8a4a" font-size="9" font-family="monospace" text-anchor="middle" opacity="0.7">95m</text>
+                <!-- Grid lines faint -->
+                <line x1="200" y1="120" x2="200" y2="195" stroke="#3a6a3a" stroke-width="0.5" opacity="0.4"/>
+                <!-- Ball trajectory (animated, hidden by default) -->
+                <circle id="ball-dot" cx="-50" cy="-50" r="5" fill="#fffde7" filter="url(#glow)" opacity="0"/>
+                <!-- HR trajectory arc -->
+                <path id="hr-arc" d="" fill="none" stroke="#ffe082" stroke-width="2" stroke-dasharray="4,3" opacity="0"/>
+                <!-- Hit zone flash -->
+                <circle id="hit-flash" cx="-50" cy="-50" r="18" fill="rgba(105,240,174,0.3)" stroke="#69f0ae" stroke-width="2" opacity="0"/>
+                <!-- Filters -->
+                <defs>
+                  <filter id="glow">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                  <filter id="hr-glow">
+                    <feGaussianBlur stdDeviation="5" result="coloredBlur"/>
+                    <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+              </svg>
+              <!-- Pitch zone overlay (shown during pitch) -->
+              <div id="pitch-zone-wrap" style="position:absolute;bottom:8px;right:8px;opacity:0;transition:opacity .3s">
+                <div class="mono" style="font-size:7px;color:var(--text-muted);text-align:center;margin-bottom:3px;letter-spacing:2px">STRIKE ZONE</div>
+                <svg id="pitch-svg" viewBox="0 0 90 100" width="72" height="80" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Zone grid 3x3 -->
+                  <rect x="5" y="5" width="80" height="90" fill="rgba(30,34,53,0.9)" stroke="#3d4459" stroke-width="1" rx="2"/>
+                  <line x1="32" y1="5" x2="32" y2="95" stroke="#3d4459" stroke-width="0.5"/>
+                  <line x1="58" y1="5" x2="58" y2="95" stroke="#3d4459" stroke-width="0.5"/>
+                  <line x1="5" y1="35" x2="85" y2="35" stroke="#3d4459" stroke-width="0.5"/>
+                  <line x1="5" y1="65" x2="85" y2="65" stroke="#3d4459" stroke-width="0.5"/>
+                  <!-- Pitch dot -->
+                  <circle id="pitch-dot" cx="-10" cy="-10" r="6" fill="#ff4655" filter="url(#glow)" opacity="0"/>
+                </svg>
+              </div>
+            </div>
+
+            <!-- At-bat info bar -->
+            <div style="padding:8px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:12px">
+              <!-- Bases mini -->
+              <div style="position:relative;width:48px;height:36px;flex-shrink:0">
+                <div id="mb3" style="position:absolute;left:0;top:50%;transform:translateY(-50%) rotate(45deg);width:12px;height:12px;border:1.5px solid var(--border-bright);background:var(--panel2)"></div>
+                <div id="mb2" style="position:absolute;left:50%;top:0;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;border:1.5px solid var(--border-bright);background:var(--panel2)"></div>
+                <div id="mb1" style="position:absolute;right:0;top:50%;transform:translateY(-50%) rotate(45deg);width:12px;height:12px;border:1.5px solid var(--border-bright);background:var(--panel2)"></div>
+              </div>
+              <!-- Batter/Pitcher info -->
+              <div style="flex:1">
+                <div id="bhud" class="mono xs tm">— 打席情報 —</div>
+                <div id="pitch-info" class="mono" style="font-size:9px;color:var(--cyan);margin-top:2px"></div>
+              </div>
+              <!-- Last play result badge -->
+              <div id="play-badge" style="font-family:'Rajdhani';font-weight:700;font-size:12px;padding:4px 10px;clip-path:polygon(5px 0%,100% 0%,calc(100% - 5px) 100%,0% 100%);opacity:0;transition:opacity .3s"></div>
+            </div>
+          </div>
+
+          <!-- RIGHT SIDEBAR: Play log + Stats -->
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <!-- Play log -->
+            <div class="vc" style="padding:0;overflow:hidden">
+              <div style="padding:8px 12px 6px;border-bottom:1px solid var(--border)"><div class="vct" style="margin-bottom:0">// PLAY LOG</div></div>
+              <div class="slog" id="slog" style="height:200px"></div>
+            </div>
+            <!-- Batter stats strip -->
+            <div class="vc" id="batter-strip">
+              <div class="vct">// AT BAT</div>
+              <div id="batter-strip-inner" class="mono xs tm">— 試合前 —</div>
+            </div>
+            <!-- Pitcher stats strip -->
+            <div class="vc" id="pitcher-strip">
+              <div class="vct">// PITCHER</div>
+              <div id="pitcher-strip-inner" class="mono xs tm">— 試合前 —</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STANDINGS -->
+    <div id="page-standings" class="page">
+      <div class="ptitle">
+        <div class="ptitle-main"><div class="ptitle-sub2">// LEAGUE DATA</div><div class="ptitle-txt">Standings</div></div>
+        <div class="ptitle-line"></div>
+      </div>
+      <div class="sw">
+        <div>
+          <div class="ll-lbl"><div class="ll-dot" style="background:#ff6b35"></div>CENTRAL LEAGUE</div>
+          <div class="vc" style="padding:0;overflow:hidden"><table class="st"><thead><tr><th>#</th><th>Team</th><th>G</th><th>W</th><th>L</th><th>D</th><th>PCT</th><th>GB</th></tr></thead><tbody id="ctb"></tbody></table></div>
+        </div>
+        <div>
+          <div class="ll-lbl"><div class="ll-dot" style="background:#00e5ff"></div>PACIFIC LEAGUE</div>
+          <div class="vc" style="padding:0;overflow:hidden"><table class="st"><thead><tr><th>#</th><th>Team</th><th>G</th><th>W</th><th>L</th><th>D</th><th>PCT</th><th>GB</th></tr></thead><tbody id="ptb"></tbody></table></div>
+        </div>
+      </div>
+      <div id="mycard" class="vc mt10"></div>
+    </div>
+
+    <!-- SCHEDULE -->
+    <div id="page-schedule" class="page">
+      <div class="ptitle">
+        <div class="ptitle-main"><div class="ptitle-sub2">// CALENDAR</div><div class="ptitle-txt">Schedule</div></div>
+        <div class="ptitle-line"></div>
+      </div>
+      <div class="vc"><div class="vct">This Week</div><div class="wr" id="wrow"></div></div>
+      <div class="vc" style="padding:0;overflow:hidden">
+        <div style="padding:12px 14px 7px"><div class="vct" style="margin-bottom:0">Match History</div></div>
+        <div id="mhist"></div>
+      </div>
+    </div>
+
+    <!-- TRAINING -->
+    <div id="page-training" class="page">
+      <div class="ptitle">
+        <div class="ptitle-main"><div class="ptitle-sub2">// DEVELOPMENT</div><div class="ptitle-txt">Training</div></div>
+        <div class="ptitle-line"></div>
+      </div>
+      <div class="vt" style="margin-bottom:14px">
+        <div class="vtab active" onclick="trMode('team',this)">チーム全体</div>
+        <div class="vtab" onclick="trMode('individual',this)">個別トレーニング</div>
+        <div class="vtab" onclick="trMode('manage',this)">昇降格 / コンディション</div>
+      </div>
+      <!-- TEAM -->
+      <div id="tr-team">
+        <div class="vc">
+          <div class="vct">Team Training Programs</div>
+          <div style="font-family:'Share Tech Mono';font-size:9px;color:var(--text-muted);margin-bottom:12px">// 一軍全選手に適用。成功率70%</div>
+          <div class="tg">
+            <div class="tcard" onclick="doTrain('power',null)"><div class="ticon">💪</div><div class="tname">POWER</div><div class="teff">+5~10 PWR</div><div class="tcost">¥500万</div></div>
+            <div class="tcard" onclick="doTrain('contact',null)"><div class="ticon">🎯</div><div class="tname">CONTACT</div><div class="teff">+5~10 MET</div><div class="tcost">¥500万</div></div>
+            <div class="tcard" onclick="doTrain('speed',null)"><div class="ticon">⚡</div><div class="tname">SPEED</div><div class="teff">+5~10 SPD</div><div class="tcost">¥300万</div></div>
+            <div class="tcard" onclick="doTrain('defense',null)"><div class="ticon">🛡️</div><div class="tname">DEFENSE</div><div class="teff">+5~10 DEF</div><div class="tcost">¥300万</div></div>
+            <div class="tcard" onclick="doTrain('stamina',null)"><div class="ticon">🏃</div><div class="tname">STAMINA</div><div class="teff">+5~10 STA</div><div class="tcost">¥400万</div></div>
+            <div class="tcard" onclick="doTrain('mental',null)"><div class="ticon">🧠</div><div class="tname">MENTAL</div><div class="teff">+5~10 MNT</div><div class="tcost">¥600万</div></div>
+          </div>
+        </div>
+      </div>
+      <!-- INDIVIDUAL -->
+      <div id="tr-individual" style="display:none">
+        <div class="g2">
+          <div class="vc" style="overflow:hidden;padding:0;max-height:520px;overflow-y:auto">
+            <div style="padding:12px 14px 8px;position:sticky;top:0;background:var(--panel);z-index:1"><div class="vct" style="margin-bottom:0">Select Player</div></div>
+            <div id="tr-player-list"></div>
+          </div>
+          <div id="tr-player-detail" class="vc">
+            <div class="mono xs tm" style="padding:20px 0;text-align:center">// 左から選手を選択</div>
+          </div>
+        </div>
+      </div>
+      <!-- MANAGE -->
+      <div id="tr-manage" style="display:none">
+        <div class="g2">
+          <div class="vc"><div class="vct">Promotion // Demotion</div><div id="plist"></div></div>
+          <div class="vc"><div class="vct">Condition Monitor</div><div id="clist"></div></div>
+        </div>
+      </div>
+    </div>
+
+        <!-- STATS -->
+    <div id="page-stats" class="page">
+      <div class="ptitle">
+        <div class="ptitle-main"><div class="ptitle-sub2">// PERFORMANCE</div><div class="ptitle-txt">Stats</div></div>
+        <div class="ptitle-line"></div>
+      </div>
+      <div class="vt">
+        <div class="vtab active" onclick="stTab('batting',this)">Batting</div>
+        <div class="vtab" onclick="stTab('pitching',this)">Pitching</div>
+        <div class="vtab" onclick="stTab('fielding',this)">Fielding</div>
+      </div>
+      <div class="vc" style="padding:0;overflow:hidden"><table class="st" id="stbl"></table></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PLAYER MODAL -->
+<div class="mov" id="modal" style="display:none" onclick="cm(event)">
+  <div class="mbox" id="minr"></div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notif" id="notif" style="display:none"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const G = {
+  season: 2024,
+  week: 1,
+  maxWeeks: 25,
+  money: 500000000,
+  players: [],
+  matchHistory: [],
+  weekSchedule: [],
+  standings: null,
+  gameMode: 'regular',
+  totalGames: 0,
+};
+let simTO = null, curSim = null, curST = 'batting', prevP = null, notifTimer = null;
+
+// ═══════════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════════
+const PC = {SP:'#ff4655',RP:'#ff7043',CL:'#ff1744',C:'#ce93d8','1B':'#4fc3f7','2B':'#26c6da','3B':'#66bb6a',SS:'#a5d6a7',LF:'#ffe082',CF:'#ffb300',RF:'#fb8c00',DH:'#ff4655'};
+const PL = {SP:'先発',RP:'中継ぎ',CL:'抑え',C:'捕手','1B':'一塁','2B':'二塁','3B':'三塁',SS:'遊撃',LF:'左翼',CF:'中堅',RF:'右翼',DH:'指名打者'};
+const NPB_TEAMS = [
+  {name:'帝都ドラゴンズ',league:'central',abbr:'帝都',wins:0,losses:0,draws:0,power:68},
+  {name:'浪速タイガーズ',league:'central',abbr:'浪速',wins:0,losses:0,draws:0,power:65},
+  {name:'港湾ブルーウェーブ',league:'central',abbr:'港湾',wins:0,losses:0,draws:0,power:63},
+  {name:'紅葉カープス',league:'central',abbr:'紅葉',wins:0,losses:0,draws:0,power:62},
+  {name:'名城グリフィンズ',league:'central',abbr:'名城',wins:0,losses:0,draws:0,power:60},
+  {name:'神宮スワンズ',league:'central',abbr:'神宮',wins:0,losses:0,draws:0,power:61},
+  {name:'博多ストームズ',league:'pacific',abbr:'博多',wins:0,losses:0,draws:0,power:70},
+  {name:'湾岸マリナーズ',league:'pacific',abbr:'湾岸',wins:0,losses:0,draws:0,power:63},
+  {name:'仙台イーグルス',league:'pacific',abbr:'仙台',wins:0,losses:0,draws:0,power:62},
+  {name:'浪速バッファローズ',league:'pacific',abbr:'浪牛',wins:0,losses:0,draws:0,power:66},
+  {name:'武蔵ライオンズ',league:'pacific',abbr:'武蔵',wins:0,losses:0,draws:0,power:61},
+  {name:'北星ファイターズ',league:'pacific',abbr:'北星',wins:0,losses:0,draws:0,power:64},
+  {name:'星座ベアーズ',league:'pacific',abbr:'星座',wins:0,losses:0,draws:0,power:65,myTeam:true},
+];
+
+// ═══════════════════════════════════════════════
+// META BONUS SYSTEM
+// ═══════════════════════════════════════════════
+function metaBonus(m) {
+  const b = {power:0,contact:0,speed:0,defense:0,stamina:0,control:0,mental:0,arm:0,eye:0,fielding:0};
+  const add = e => e && Object.entries(e).forEach(([k,v]) => b[k] = (b[k]||0)+v);
+
+  add({A:{control:8,defense:5,mental:3,eye:4},B:{contact:7,speed:5,power:3,stamina:-2},O:{power:8,mental:7,speed:3,arm:3},AB:{contact:5,eye:8,fielding:5,mental:5}}[m.blood]);
+  add({'熱血漢':{power:10,mental:8,speed:3,control:-3},'冷静沈着':{control:10,eye:8,mental:8,power:-2},'天才肌':{contact:12,eye:8,speed:5,stamina:-3},'努力家':{stamina:10,defense:7,mental:5,fielding:5},'ムードメーカー':{mental:10,contact:5,speed:5,power:3},'職人気質':{control:12,fielding:10,defense:8,speed:-3},'野心家':{power:8,mental:10,arm:7,stamina:5},'慎重派':{defense:10,eye:8,control:7,power:-5},'大雑把':{power:8,speed:5,contact:-5,control:-8},'ガラスのハート':{contact:12,power:10,stamina:-10,mental:-8}}[m.personality]);
+  add({'北海道':{stamina:8,mental:5,defense:3},'東北':{stamina:7,defense:5,mental:5},'関東':{mental:8,eye:5,contact:3},'中部':{contact:5,defense:5,stamina:3,fielding:3},'関西':{mental:7,power:5,speed:3},'中国':{defense:8,stamina:5,fielding:5},'四国':{mental:10,stamina:5,defense:3},'九州':{power:10,arm:5,speed:5},'沖縄':{speed:10,arm:7,contact:5},'海外':{power:7,mental:7,eye:5}}[m.hometown]);
+  add({'ラーメン':{stamina:8,power:5},'寿司':{contact:5,eye:5,defense:5},'焼肉':{power:10,stamina:3,speed:-2},'カレー':{stamina:10,mental:3},'うどん':{defense:7,stamina:5,fielding:3},'サラダ':{speed:10,stamina:5,power:-3},'ステーキ':{power:12,arm:5,speed:-3},'唐揚げ':{mental:7,power:5,stamina:3},'そば':{mental:8,control:5,stamina:5},'ピザ':{power:7,speed:3,control:-5,stamina:3},'納豆':{stamina:7,defense:5,mental:3},'プロテイン':{power:5,stamina:5,speed:3,arm:3,contact:2}}[m.food]);
+  add({'筋トレ':{power:10,arm:5,speed:-2},'読書':{eye:8,mental:7,control:5},'ゲーム':{eye:7,contact:5,mental:5},'料理':{fielding:7,control:5,eye:3},'音楽':{contact:7,speed:5,mental:3},'釣り':{mental:10,stamina:5,eye:5},'ゴルフ':{control:10,fielding:5,eye:3},'サッカー':{speed:10,defense:5,stamina:5},'映画鑑賞':{mental:5,eye:3},'温泉巡り':{stamina:10,mental:5}}[m.hobby]);
+  add({'甲子園出場':{mental:10,stamina:7,arm:5},'大学No.1':{control:8,eye:7,contact:5,fielding:5},'社会人エース':{control:10,defense:7,stamina:5},'海外経験あり':{mental:10,eye:8,power:5},'ドラフト1位':{power:8,contact:8,speed:5,arm:5},'育成出身':{stamina:7,mental:5,speed:5},'元他球団':{control:7,eye:5,defense:5},'外国人選手':{power:15,arm:8,stamina:5,control:-5}}[m.background]);
+  add({'右投左打':{contact:5,eye:5,speed:3},'左投左打':{contact:8,speed:5,arm:-3},'左投右打':{power:3,arm:3},'両打ち':{contact:7,eye:7,power:-3}}[m.hand]);
+  add({'牡羊座':{power:7,mental:3,speed:3},'牡牛座':{stamina:8,defense:5,mental:3},'双子座':{contact:7,speed:5,eye:3},'蟹座':{mental:-3,stamina:5,fielding:7},'獅子座':{mental:10,power:5,arm:3},'乙女座':{control:10,fielding:8,eye:5},'天秤座':{contact:5,eye:5,defense:5,fielding:3},'蠍座':{mental:10,stamina:7,power:5},'射手座':{speed:8,arm:5,power:3},'山羊座':{stamina:8,defense:7,control:5},'水瓶座':{eye:8,speed:5,contact:5},'魚座':{contact:7,eye:7,mental:-3}}[m.zodiac]);
+  // Special ability bonuses
+  add({'逆境の男':{mental:8},'勝負師':{mental:6,power:3},'大舞台に強い':{mental:10},'連投OK':{stamina:10},'炎の三振':{arm:8,control:5},'ホームラン職人':{power:12},'守備の鬼':{defense:10,fielding:8},'盗塁王':{speed:12},'代打の神様':{contact:8,mental:6}}[m.special]);
+  return b;
+}
+
+function genParams(meta, pos) {
+  const ip = ['SP','RP','CL'].includes(pos);
+  const base = ip
+    ? {power:30,contact:30,speed:30,defense:45,stamina:50,control:55,mental:50,arm:50,eye:40,fielding:40}
+    : {power:45,contact:50,speed:45,defense:40,stamina:50,control:40,mental:50,arm:45,eye:45,fielding:45};
+  const pa = {SP:{stamina:15,control:10,arm:10},RP:{arm:15,mental:10,stamina:-10},CL:{mental:20,arm:10,control:10,stamina:-15},C:{defense:15,fielding:15,arm:10},'1B':{power:15,contact:10},'2B':{speed:10,defense:10,fielding:10},'3B':{power:10,arm:10,defense:5},SS:{speed:10,fielding:15,defense:10},LF:{power:5,speed:5},CF:{speed:15,defense:10,arm:5},RF:{arm:15,power:10},DH:{power:20,contact:15}};
+  const bn = metaBonus(meta);
+  const p = {};
+  Object.keys(base).forEach(k => {
+    p[k] = Math.min(100, Math.max(1, base[k] + ((pa[pos]||{})[k]||0) + (bn[k]||0) + Math.floor(Math.random()*18)-5));
+  });
+  p.overall = Math.round(ip
+    ? (p.control*.3+p.stamina*.25+p.arm*.25+p.mental*.15+p.fielding*.05)
+    : (p.contact*.25+p.power*.2+p.speed*.15+p.defense*.15+p.eye*.15+p.fielding*.1));
+  return p;
+}
+
+function gr(v) { return v>=90?'S':v>=75?'A':v>=60?'B':v>=45?'C':'D'; }
+function gc(v) { return v>=90?'#ff6b35':v>=75?'#ff4655':v>=60?'#ffe082':v>=45?'#00e5ff':'#4a5261'; }
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+function initStandings() {
+  G.standings = NPB_TEAMS.map(t => ({...t}));
+  G.standings.forEach(t => {
+    if (!t.myTeam) {
+      t.wins = Math.floor(Math.random()*35)+5;
+      t.losses = Math.floor(Math.random()*35)+5;
+      t.draws = Math.floor(Math.random()*3);
+    }
+  });
+}
+
+function initWeekSchedule() {
+  const others = G.standings.filter(t => !t.myTeam);
+  const days = ['月','火','水','木','金','土','日'];
+  G.weekSchedule = days.map((d, i) => {
+    const hasGame = [0,1,2,4,5,6].includes(i);
+    const opp = hasGame ? others[Math.floor(Math.random()*others.length)] : null;
+    return { day: d, opp, played: false, result: null };
+  });
+}
+
+function initSamplePlayers() {
+  const smp = [
+    {name:'山本 豪',pos:'SP',no:18,blood:'O',zodiac:'獅子座',ht:'九州',food:'焼肉',pers:'熱血漢',bg:'甲子園出場',hob:'筋トレ',spe:'炎の三振',hand:'右投右打'},
+    {name:'鈴木 翔太',pos:'CL',no:11,blood:'A',zodiac:'乙女座',ht:'関東',food:'そば',pers:'冷静沈着',bg:'社会人エース',hob:'読書',spe:'逆境の男',hand:'右投右打'},
+    {name:'田中 大輝',pos:'C',no:22,blood:'B',zodiac:'双子座',ht:'関西',food:'寿司',pers:'ムードメーカー',bg:'ドラフト1位',hob:'料理',spe:'なし',hand:'右投右打'},
+    {name:'佐藤 健一',pos:'1B',no:3,blood:'O',zodiac:'牡牛座',ht:'北海道',food:'ステーキ',pers:'職人気質',bg:'大学No.1',hob:'温泉巡り',spe:'ホームラン職人',hand:'右投左打'},
+    {name:'高橋 龍二',pos:'2B',no:7,blood:'A',zodiac:'山羊座',ht:'東北',food:'うどん',pers:'努力家',bg:'育成出身',hob:'ゴルフ',spe:'なし',hand:'右投右打'},
+    {name:'渡辺 颯',pos:'SS',no:6,blood:'AB',zodiac:'水瓶座',ht:'沖縄',food:'サラダ',pers:'天才肌',bg:'ドラフト1位',hob:'サッカー',spe:'盗塁王',hand:'右投左打'},
+    {name:'中村 猛',pos:'3B',no:5,blood:'O',zodiac:'蠍座',ht:'九州',food:'ラーメン',pers:'野心家',bg:'海外経験あり',hob:'筋トレ',spe:'勝負師',hand:'右投右打'},
+    {name:'伊藤 拓海',pos:'LF',no:8,blood:'B',zodiac:'射手座',ht:'沖縄',food:'唐揚げ',pers:'大雑把',bg:'ドラフト1位',hob:'サッカー',spe:'なし',hand:'右投左打'},
+    {name:'松本 翼',pos:'CF',no:1,blood:'A',zodiac:'牡羊座',ht:'関西',food:'カレー',pers:'熱血漢',bg:'甲子園出場',hob:'音楽',spe:'大舞台に強い',hand:'右投右打'},
+    {name:'吉田 空',pos:'RF',no:9,blood:'O',zodiac:'魚座',ht:'中部',food:'プロテイン',pers:'慎重派',bg:'大学No.1',hob:'釣り',spe:'なし',hand:'右投左打'},
+    {name:'清水 雄介',pos:'DH',no:44,blood:'B',zodiac:'蟹座',ht:'海外',food:'ステーキ',pers:'ガラスのハート',bg:'外国人選手',hob:'映画鑑賞',spe:'ホームラン職人',hand:'右投右打'},
+    {name:'木村 誠',pos:'RP',no:27,blood:'AB',zodiac:'天秤座',ht:'関東',food:'納豆',pers:'冷静沈着',bg:'元他球団',hob:'読書',spe:'連投OK',hand:'右投右打'},
+    {name:'林 卓也',pos:'RP',no:21,blood:'A',zodiac:'牡牛座',ht:'中部',food:'カレー',pers:'努力家',bg:'育成出身',hob:'ゴルフ',spe:'なし',hand:'右投右打'},
+  ];
+  smp.forEach(s => {
+    const meta = {blood:s.blood,zodiac:s.zodiac,hometown:s.ht,food:s.food,personality:s.pers,background:s.bg,hobby:s.hob,special:s.spe,hand:s.hand};
+    const params = genParams(meta, s.pos);
+    G.players.push(mkPlayer(s.name, s.pos, s.no, meta, params, 'ichi'));
+  });
+}
+
+function mkPlayer(name, pos, num, meta, params, tier) {
+  return {
+    id: Date.now() + Math.random(),
+    name, position: pos, number: num, meta, params, tier,
+    condition: 70 + Math.floor(Math.random()*31),
+    age: 20 + Math.floor(Math.random()*15),
+    seasons: 0,
+    gs: { // game stats
+      games:0, atbats:0, hits:0, doubles:0, hr:0, rbi:0, bb:0, strikeouts:0,
+      // pitcher
+      pgames:0, wins:0, losses:0, saves:0, ip:0, er:0, pk:0, whip_bb:0, whip_h:0,
+    }
+  };
+}
+
+// ═══════════════════════════════════════════════
+// ROSTER RENDER
+// ═══════════════════════════════════════════════
+function renderR() {
+  const ic = G.players.filter(p => p.tier==='ichi');
+  const ni = G.players.filter(p => p.tier==='ni');
+  document.getElementById('ichiC').textContent = ic.length;
+  document.getElementById('niC').textContent = ni.length;
+  document.getElementById('richi').innerHTML = ic.map(pCard).join('');
+  document.getElementById('rni').innerHTML = ni.map(pCard).join('');
+  renderLU(); renderPL(); renderCL(); updOS();
+  updateHeaderRecord();
+}
+
+function pCard(p) {
+  const ip = ['SP','RP','CL'].includes(p.position);
+  const clr = PC[p.position] || '#ff4655';
+  const ms = ip ? ['control','arm','stamina','mental'] : ['contact','power','speed','defense'];
+  const lb = {control:'CTRL',arm:'ARM',stamina:'STA',mental:'MNT',contact:'MET',power:'PWR',speed:'SPD',defense:'DEF'};
+  const cc = p.condition>=80?'#69f0ae':p.condition>=50?'#ffe082':'#ff4655';
+  const avg = p.gs.atbats > 0 ? (p.gs.hits/p.gs.atbats).toFixed(3).replace('0.','.') : '.---';
+  const era = p.gs.ip > 0 ? (p.gs.er * 9 / p.gs.ip).toFixed(2) : '-.--';
+  const statLine = ip ? `${p.gs.wins}W ${p.gs.losses}L ERA:${era}` : `打率${avg} ${p.gs.hr}本 ${p.gs.rbi}打点`;
+  return `<div class="pc" style="--pc:${clr}" onclick="showPD(${p.id})">
+    <div class="pc-h">
+      <div class="pc-num">${p.number}</div>
+      <div style="flex:1">
+        <div class="pc-n">${p.name}</div>
+        <div class="pc-row">
+          <div class="pbadge">${p.position}</div>
+          <div class="phand">${p.meta.hand}</div>
+          ${p.meta.special!=='なし'?`<div class="pspe">${p.meta.special}</div>`:''}
+        </div>
+        <div style="font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted);margin-top:3px">${statLine}</div>
+      </div>
+      <div class="pc-ovr g${gr(p.params.overall)}">${p.params.overall}</div>
+    </div>
+    <div class="pp">${ms.map(k=>`<div class="ppar">
+      <div class="ppar-l">${lb[k]}</div>
+      <div class="ppar-v" style="color:${gc(p.params[k])}">${p.params[k]}</div>
+      <div class="ppar-b"><div class="ppar-bf" style="width:${p.params[k]}%;background:${gc(p.params[k])}"></div></div>
+    </div>`).join('')}</div>
+    <div class="cb-wrap">
+      <div class="mono xs tm">COND</div>
+      <div class="cb"><div class="cb-f" style="width:${p.condition}%;background:${cc}"></div></div>
+      <div class="rj fw7" style="font-size:12px;color:${cc}">${p.condition}%</div>
+    </div>
+  </div>`;
+}
+
+function rTab(t, el) {
+  document.querySelectorAll('#page-roster .vtab').forEach(x => x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('richi').style.display = t==='ichi' ? 'grid' : 'none';
+  document.getElementById('rni').style.display   = t==='ni'   ? 'grid' : 'none';
+}
+
+// ═══════════════════════════════════════════════
+// PLAYER DETAIL MODAL
+// ═══════════════════════════════════════════════
+function showPD(id) {
+  const p = G.players.find(x => x.id===id); if (!p) return;
+  const ip = ['SP','RP','CL'].includes(p.position);
+  const clr = PC[p.position] || '#ff4655';
+  const pd = [
+    {k:'contact',l:'CONTACT',c:'#69f0ae'},{k:'power',l:'POWER',c:'#ff4655'},
+    {k:'speed',l:'SPEED',c:'#4fc3f7'},{k:'defense',l:'DEFENSE',c:'#ce93d8'},
+    {k:'stamina',l:'STAMINA',c:'#ffb300'},{k:'control',l:'CONTROL',c:'#26c6da'},
+    {k:'mental',l:'MENTAL',c:'#ffe082'},{k:'arm',l:'ARM/VELO',c:'#f48fb1'},
+    {k:'eye',l:'EYE',c:'#a5d6a7'},{k:'fielding',l:'FIELDING',c:'#b39ddb'},
+  ];
+  const avg = p.gs.atbats>0 ? (p.gs.hits/p.gs.atbats).toFixed(3) : '.---';
+  const era = p.gs.ip>0 ? (p.gs.er*9/p.gs.ip).toFixed(2) : '-.--';
+  const obp = p.gs.atbats+p.gs.bb>0 ? ((p.gs.hits+p.gs.bb)/(p.gs.atbats+p.gs.bb)).toFixed(3) : '.---';
+  const whip = p.gs.ip>0 ? ((p.gs.whip_bb+p.gs.whip_h)/p.gs.ip).toFixed(2) : '-.--';
+  const sh = ip
+    ? `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[['登板',p.gs.pgames],['勝',p.gs.wins],['敗',p.gs.losses],['防御率',era],['奪三振',p.gs.pk],['セーブ',p.gs.saves],['投球回',p.gs.ip.toFixed(1)],['WHIP',whip]].map(([l,v])=>`<div style="background:var(--panel2);padding:7px;clip-path:polygon(5px 0%,100% 0%,100% calc(100% - 5px),calc(100% - 5px) 100%,0% 100%,0% 5px)"><div class="mono xs tm">${l}</div><div class="rj fw7" style="font-size:20px">${v}</div></div>`).join('')}</div>`
+    : `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">${[['試合',p.gs.games],['打率',avg],['出塁率',obp],['HR',p.gs.hr],['打点',p.gs.rbi],['安打',p.gs.hits],['二塁打',p.gs.doubles],['四球',p.gs.bb],['三振',p.gs.strikeouts]].map(([l,v])=>`<div style="background:var(--panel2);padding:7px;clip-path:polygon(5px 0%,100% 0%,100% calc(100% - 5px),calc(100% - 5px) 100%,0% 100%,0% 5px)"><div class="mono xs tm">${l}</div><div class="rj fw7" style="font-size:20px">${v}</div></div>`).join('')}</div>`;
+
+  document.getElementById('minr').innerHTML = `
+    <div class="mhdr">
+      <div class="mnum" style="color:${clr}">${p.number}</div>
+      <div style="flex:1">
+        <div class="mpname">${p.name}</div>
+        <div class="mpsub">${PL[p.position]||p.position} // AGE ${p.age}</div>
+        <div class="mchips">
+          <span class="mchip">🩸${p.meta.blood}</span><span class="mchip">📍${p.meta.hometown}</span>
+          <span class="mchip">🍜${p.meta.food}</span><span class="mchip">🎭${p.meta.personality}</span>
+          <span class="mchip">🌙${p.meta.zodiac}</span><span class="mchip">🎸${p.meta.hobby}</span>
+          ${p.meta.special!=='なし'?`<span class="mchip red">⭐${p.meta.special}</span>`:''}
+        </div>
+      </div>
+      <div class="movr"><div class="movrl">OVERALL</div><div class="movrv">${p.params.overall}</div><div class="mgrade g${gr(p.params.overall)}">GRADE ${gr(p.params.overall)}</div></div>
+    </div>
+    <div class="divl"></div>
+    <div class="vct">// PARAMETERS</div>
+    ${pd.map(d=>`<div class="prow"><div class="prow-n">${d.l}</div><div class="prow-b"><div class="prow-bf" style="width:${p.params[d.k]}%;background:${d.c}"></div></div><div class="prow-v" style="color:${gc(p.params[d.k])}">${p.params[d.k]}</div></div>`).join('')}
+    <div class="divl"></div>
+    <div class="vct">// SEASON STATS</div>${sh}
+    <div class="divl"></div>
+    <div class="flex gap8">
+      ${p.tier==='ichi'
+        ?`<button class="vb vbg vbs" onclick="demote(${p.id})">▼ 二軍降格</button>`
+        :`<button class="vb vbp vbs" onclick="promote(${p.id})">▲ 一軍昇格</button>`}
+      <button class="vb vbg vbs" onclick="cm()">✕ CLOSE</button>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function cm(e) { if (!e || e.target===document.getElementById('modal')) document.getElementById('modal').style.display='none'; }
+
+// ═══════════════════════════════════════════════
+// PROMOTION / DEMOTION
+// ═══════════════════════════════════════════════
+function promote(id) {
+  const p = G.players.find(x=>x.id===id); if (!p) return;
+  if (G.players.filter(x=>x.tier==='ichi').length >= 25) { notif('一軍上限25名です','❌'); return; }
+  p.tier = 'ichi'; renderR(); cm(); notif(`${p.name} // 一軍昇格！`,'▲');
+}
+function demote(id) {
+  const p = G.players.find(x=>x.id===id); if (!p) return;
+  if (G.players.filter(x=>x.tier==='ni').length >= 30) { notif('二軍上限30名です','❌'); return; }
+  p.tier = 'ni'; renderR(); cm(); notif(`${p.name} // 二軍降格`,'▼');
+}
+
+function renderPL() {
+  const el = document.getElementById('plist'); if (!el) return;
+  const ni = G.players.filter(p=>p.tier==='ni');
+  const cds = ni.filter(p=>p.condition>=70&&p.params.overall>=55).sort((a,b)=>b.params.overall-a.params.overall).slice(0,4);
+  let h = '<div class="mono xs tm mb6">// CALL-UP CANDIDATES</div>';
+  if (!cds.length) h += '<div class="mono xs tm">// NONE</div>';
+  else cds.forEach(p => { h += `<div class="fxb mb6"><div><span class="fw7">${p.name}</span> <span class="mono xs tm">${p.position} OVR:${p.params.overall}</span></div><button class="vb vbp vbs" onclick="promote(${p.id})">CALL UP</button></div>`; });
+  const dm = G.players.filter(p=>p.tier==='ichi'&&p.condition<=30).sort((a,b)=>a.condition-b.condition).slice(0,3);
+  if (dm.length) {
+    h += '<div class="mono xs tm" style="margin:10px 0 6px">// INJURY RISK</div>';
+    dm.forEach(p => { h += `<div class="fxb mb6"><div><span>${p.name}</span> <span class="mono xs tr">COND:${p.condition}%</span></div><button class="vb vbg vbs" onclick="demote(${p.id})">SEND DOWN</button></div>`; });
+  }
+  el.innerHTML = h;
+}
+
+function renderCL() {
+  const el = document.getElementById('clist'); if (!el) return;
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  if (!ic.length) { el.innerHTML = '<div class="mono xs tm">// NO ACTIVE PLAYERS</div>'; return; }
+  el.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:5px">' +
+    ic.map(p => {
+      const c = p.condition, col = c>=80?'#69f0ae':c>=50?'#ffe082':'#ff4655';
+      return `<div class="fxc gap6" style="background:var(--panel2);padding:6px 9px;clip-path:polygon(5px 0%,100% 0%,100% calc(100% - 5px),calc(100% - 5px) 100%,0% 100%,0% 5px)">
+        <div style="flex:1;font-weight:700;font-size:11px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
+        <div class="cb" style="width:44px"><div class="cb-f" style="width:${c}%;background:${col}"></div></div>
+        <div class="mono" style="font-size:10px;color:${col};width:26px">${c}%</div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+// ═══════════════════════════════════════════════
+// SCOUT / CREATE PLAYER
+// ═══════════════════════════════════════════════
+function gm() {
+  return {blood:V('cblood'),zodiac:V('czodiac'),hometown:V('cht'),food:V('cfood'),personality:V('cpers'),background:V('cbg'),hobby:V('chob'),special:V('cspe'),hand:V('chand')};
+}
+function V(id) { return document.getElementById(id).value; }
+
+function calcP() {
+  const pos = V('cpos'), meta = gm();
+  const p = genParams(meta, pos); prevP = p;
+  const pd = [{k:'contact',l:'CONTACT',c:'#69f0ae'},{k:'power',l:'POWER',c:'#ff4655'},{k:'speed',l:'SPEED',c:'#4fc3f7'},{k:'defense',l:'DEFENSE',c:'#ce93d8'},{k:'stamina',l:'STAMINA',c:'#ffb300'},{k:'control',l:'CONTROL',c:'#26c6da'},{k:'mental',l:'MENTAL',c:'#ffe082'},{k:'arm',l:'ARM/VELO',c:'#f48fb1'},{k:'eye',l:'EYE',c:'#a5d6a7'},{k:'fielding',l:'FIELDING',c:'#b39ddb'}];
+  const g = gr(p.overall);
+  document.getElementById('pprev').innerHTML = `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <div style="font-family:'Rajdhani';font-weight:700;font-size:48px;color:var(--red);text-shadow:0 0 28px rgba(255,70,85,.5);line-height:1">${p.overall}</div>
+      <div><div class="mono xs tm">OVERALL</div><div class="rj fw7 g${g}" style="font-size:20px;letter-spacing:2px">GRADE ${g}</div></div>
+    </div>
+    ${pd.map(d=>`<div class="prow"><div class="prow-n">${d.l}</div><div class="prow-b"><div class="prow-bf" style="width:${p[d.k]}%;background:${d.c}"></div></div><div class="prow-v" style="color:${gc(p[d.k])}">${p[d.k]}</div></div>`).join('')}`;
+}
+
+function randP() {
+  const ns = ['田中','鈴木','佐藤','高橋','渡辺','伊藤','山本','中村','小林','加藤','吉田','山田','松本','林','斎藤'];
+  const gs = ['大輝','翔','拓哉','健太','直人','雄介','康平','隼人','龍二','猛','誠','亮','悠','颯','空'];
+  document.getElementById('cn').value = `${ns[Math.floor(Math.random()*ns.length)]} ${gs[Math.floor(Math.random()*gs.length)]}`;
+  document.getElementById('cnum').value = Math.floor(Math.random()*99)+1;
+  ['cblood','czodiac','cht','cfood','cpers','cbg','chob','cspe','chand','cpos'].forEach(id => {
+    const s = document.getElementById(id);
+    s.selectedIndex = Math.floor(Math.random()*s.options.length);
+  });
+  calcP();
+}
+
+function signP() {
+  const name = document.getElementById('cn').value.trim();
+  if (!name) { notif('選手名を入力してください','❌'); return; }
+  const pos = V('cpos');
+  let num = parseInt(document.getElementById('cnum').value);
+  if (!num || num<1 || num>99) num = Math.floor(Math.random()*99)+1;
+  const meta = gm(), params = prevP || genParams(meta, pos);
+  G.players.push(mkPlayer(name, pos, num, meta, params, 'ichi'));
+  renderR(); sp('roster', document.querySelector('[data-p="roster"]'));
+  notif(`${name} (${pos}) // SIGNED`,'⊕'); prevP = null;
+}
+
+// ═══════════════════════════════════════════════
+// LINEUP
+// ═══════════════════════════════════════════════
+function renderLU() {
+  const el = document.getElementById('ldsp'); if (!el) return;
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  if (!ic.length) { el.innerHTML='<div class="mono xs tm">// NO PLAYERS</div>'; return; }
+  const pit = ic.filter(p=>['SP','RP','CL'].includes(p.position));
+  const bat = ic.filter(p=>!['SP','RP','CL'].includes(p.position));
+  let h = '';
+  if (pit.length) h += `<div class="mono xs tm mb6">// PITCHING ROTATION</div>`;
+  pit.slice(0,3).forEach((p,i) => { h += `<div class="fxb mb6"><div><span class="tr">P${i+1}</span> <span class="fw7">#${p.number}</span> ${p.name}</div><div class="mono xs tm">${p.position} ${p.params.overall}</div></div>`; });
+  if (bat.length) h += `<div class="mono xs tm" style="margin:7px 0 5px">// BATTING ORDER</div>`;
+  bat.slice(0,9).forEach((p,i) => { h += `<div class="fxb mb6"><div><span class="tr">${i+1}</span> <span class="fw7">#${p.number}</span> ${p.name}</div><div class="mono xs tm">${p.position}</div></div>`; });
+  el.innerHTML = h;
+}
+
+function updOS() {
+  const sel = document.getElementById('oppsel');
+  if (!sel || !G.standings) return;
+  sel.innerHTML = G.standings.filter(t=>!t.myTeam).map(t=>`<option value="${t.abbr}">${t.name}</option>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// SIMULATION ENGINE
+// ═══════════════════════════════════════════════
+function setMode(m, el) {
+  G.gameMode = m;
+  document.querySelectorAll('.am').forEach(b=>b.classList.remove('am'));
+  el.classList.add('am');
+}
+
+function myTeamPower() {
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  if (!ic.length) return 50;
+  return ic.reduce((s,p)=>s+p.params.overall,0) / ic.length;
+}
+
+function startSim() {
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  if (ic.length < 9) { notif('一軍に9名以上が必要です','❌'); return; }
+  if (simTO) clearTimeout(simTO);
+  document.getElementById('pregame').style.display = 'none';
+  document.getElementById('sarea').style.display = 'block';
+  document.getElementById('slog').innerHTML = '';
+  const opp = document.getElementById('oppsel').value;
+  const ot = G.standings && G.standings.find(t=>t.abbr===opp);
+  curSim = {
+    inning:1, half:'top', home:0, away:0, outs:0, balls:0, strikes:0,
+    bases:[false,false,false], awayName:ot?ot.abbr:opp, done:false, bIdx:0, ot,
+    pitcherFaced:0, oppPower:ot?ot.power:62,
+    innings:[], // array of {h,a} per inning
+  };
+  document.getElementById('hnm').textContent = '星座ベアーズ';
+  document.getElementById('anm').textContent = curSim.awayName;
+  initInnTable();
+  updHUD(); updBases(); simStep();
+}
+
+function initInnTable() {
+  const hdr = document.getElementById('inn-hdr');
+  const hr  = document.getElementById('inn-home');
+  const ar  = document.getElementById('inn-away');
+  hdr.innerHTML = '<th class="team-cell">TEAM</th>' + Array.from({length:9},(_,i)=>`<th>${i+1}</th>`).join('') + '<th>R</th><th>H</th>';
+  hr.innerHTML  = '<td class="team-cell" style="color:var(--red)">星座</td>' + Array.from({length:9},()=>'<td class="inn-r-h">-</td>').join('') + '<td class="total-cell" id="inn-tot-h">0</td><td id="inn-hit-h">0</td>';
+  ar.innerHTML  = `<td class="team-cell" style="color:var(--cyan)">${curSim.awayName}</td>` + Array.from({length:9},()=>'<td class="inn-r-a">-</td>').join('') + '<td class="total-cell" id="inn-tot-a">0</td><td id="inn-hit-a">0</td>';
+}
+
+function updInnTable() {
+  if (!curSim) return;
+  // Update current inning cells
+  const sim = curSim;
+  // Highlight active inning column
+  document.querySelectorAll('#inn-tbl th').forEach((th,i) => {
+    th.classList.toggle('active-inn', i === sim.inning); // th index 0=team,1=inn1...
+  });
+}
+
+function recordInnRun(half, inn, runs) {
+  const cells = document.querySelectorAll(half==='home' ? '.inn-r-h' : '.inn-r-a');
+  const idx = inn - 1;
+  if (cells[idx]) {
+    const cur = parseInt(cells[idx].textContent) || 0;
+    cells[idx].textContent = cur + runs;
+    cells[idx].style.color = 'var(--gold)';
+  }
+  // Update total
+  const totEl = document.getElementById(half==='home'?'inn-tot-h':'inn-tot-a');
+  if (totEl) totEl.textContent = parseInt(totEl.textContent||0) + runs;
+}
+
+function recordInnHit(half) {
+  const el = document.getElementById(half==='home'?'inn-hit-h':'inn-hit-a');
+  if (el) el.textContent = parseInt(el.textContent||0) + 1;
+}
+
+function fastSim(oppOverride) {
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  if (ic.length < 9 && !oppOverride) { notif('一軍に9名以上が必要です','❌'); return; }
+  const opp = oppOverride || (document.getElementById('oppsel') && document.getElementById('oppsel').value);
+  const ot = G.standings && G.standings.find(t=>t.abbr===opp);
+  const mp = myTeamPower();
+  const op = ot ? ot.power : 62;
+  const diff = (mp - op) / 10;
+  const myRuns = Math.max(0, Math.floor(Math.random()*9 + diff - 1));
+  const oppRuns = Math.max(0, Math.floor(Math.random()*9 - diff));
+  const res = {home:myRuns, away:oppRuns, opp:ot?ot.abbr:opp, ot};
+  recordResult(res);
+  applyMatchStats(res);
+  return res;
+}
+
+function simStep() {
+  if (!curSim || curSim.done) return;
+  const sim = curSim;
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  const batters = ic.filter(p=>!['SP','RP','CL'].includes(p.position));
+  const pitcher = ic.find(p=>p.position==='SP') || ic[0];
+  const batter  = batters[sim.bIdx % Math.max(1,batters.length)];
+  if (!batter) { finSim(); return; }
+  const isMyBat = sim.half === 'bottom';
+
+  // ── Pitch selection ──
+  const pitchTypes = ['直球','スライダー','カーブ','チェンジアップ','フォーク','カットボール','ツーシーム','シュート'];
+  const pitchWeights = pitcher
+    ? [pitcher.params.arm*0.4,pitcher.params.control*0.25,pitcher.params.mental*0.15,
+       pitcher.params.control*0.1,pitcher.params.arm*0.05,pitcher.params.control*0.03,
+       pitcher.params.arm*0.01,pitcher.params.mental*0.01]
+    : [40,25,15,10,5,3,1,1];
+  const totalW = pitchWeights.reduce((a,b)=>a+b,0);
+  let rv = Math.random()*totalW, pitchIdx = 0;
+  for (let i=0;i<pitchWeights.length;i++){rv-=pitchWeights[i];if(rv<=0){pitchIdx=i;break;}}
+  const pitch = pitchTypes[pitchIdx];
+  const baseSpd = pitcher ? Math.floor(pitcher.params.arm*0.9+60) : 130;
+  const speedMap = {'直球':0,'ツーシーム':-2,'カットボール':-5,'スライダー':-10,'シュート':-8,'カーブ':-20,'チェンジアップ':-18,'フォーク':-15};
+  const pitchSpd = baseSpd + (speedMap[pitch]||0) + Math.floor(Math.random()*4-2);
+
+  // ── Update bhud ──
+  const bhudEl = document.getElementById('bhud');
+  if (bhudEl) bhudEl.textContent = isMyBat
+    ? `打者: ${batter.name}  (${batter.position})`
+    : `投手: ${pitcher ? pitcher.name : '?'}  vs 相手打者`;
+
+  updBatterStrip(isMyBat ? batter : null, !isMyBat ? pitcher : pitcher);
+
+  // ── Hit zones ──
+  const zones   = ['左翼線','左中間','センター','右中間','右翼線','内野安打'];
+  const inZones = ['一塁ゴロ','二塁ゴロ','遊撃ゴロ','三塁ゴロ','投ゴロ','中飛','左飛','右飛','ライナー内野'];
+  const strikeDescs = ['見逃し三振','空振り三振','ファールで粘って三振'];
+  const hitZone = () => zones[Math.floor(Math.random()*zones.length)];
+  const outZone = () => inZones[Math.floor(Math.random()*inZones.length)];
+  const hrAngles = ['センター方向','左中間スタンド','右中間スタンド','レフトポール際','ライトスタンド上段'];
+  const hrAngle = () => hrAngles[Math.floor(Math.random()*hrAngles.length)];
+
+  // ── Odds ──
+  const batPow = batter ? (batter.params.contact+batter.params.power+batter.params.eye)/3 : 50;
+  const oppAdj = sim.oppPower / 65;
+  const myAdj  = myTeamPower() / 65;
+  const hrPct   = isMyBat ? (3+(batPow-50)*0.08+(batter.params.power-50)*0.06) : (2*oppAdj);
+  const hitPct  = isMyBat ? (24+(batPow-50)*0.25*myAdj) : (22*oppAdj);
+  const walkPct = isMyBat ? (8+batter.params.eye*0.08) : (6*oppAdj);
+  const r = Math.random()*100;
+  let outcome = r<hrPct?'HR':r<hrPct+hitPct?(Math.random()<0.25?'2B':'H'):r<hrPct+hitPct+walkPct?'BB':'OUT';
+
+  // ── Determine zone keys ──
+  let zoneKey = '', hrKey = '', strikeDesc = '';
+  if (outcome==='HR')  { hrKey = hrAngle(); }
+  else if (outcome==='H'||outcome==='2B') { zoneKey = hitZone(); }
+  else if (outcome==='OUT') {
+    const isK = Math.random()<0.35;
+    if (isK) { strikeDesc = strikeDescs[Math.floor(Math.random()*3)]; zoneKey = 'K'; }
+    else zoneKey = outZone();
+  }
+
+  // ── Animate pitch first, then result ──
+  animatePitch(pitch, pitchSpd, () => {
+    // Compute result
+    let runs = 0, lt = '', lt2 = '', lc = 'linf';
+    if (outcome==='HR') {
+      runs = sim.bases.filter(Boolean).length+1;
+      sim.bases = [false,false,false];
+      const dist = Math.floor(batter ? batter.params.power*1.2+80+Math.random()*30 : 120);
+      lt  = `🔥 ${isMyBat?batter.name:'相手打者'}  ホームラン！  ${hrKey}  推定${dist}m`;
+      lt2 = `   ${pitch} ${pitchSpd}km/h → ${runs}点`;
+      lc  = 'lhr'; sim.bIdx++;
+      showPlayBadge('HR', '#ffe082');
+      if (isMyBat) { batter.gs.hr++; batter.gs.rbi+=runs; batter.gs.hits++; batter.gs.atbats++; batter.gs.games=Math.max(batter.gs.games,1); recordInnHit('home'); recordInnRun('home',sim.inning,runs); }
+      else { recordInnRun('away',sim.inning,runs); }
+    } else if (outcome==='2B') {
+      if (sim.bases[2]) runs++; if (sim.bases[1]) runs++;
+      sim.bases=[true,false,false];
+      lt  = `◈ ${isMyBat?batter.name:'相手打者'}  二塁打！  ${zoneKey}`;
+      lt2 = `   ${pitch} ${pitchSpd}km/h${runs>0?`  → ${runs}点`:''}`;
+      lc  = 'lht'; sim.bIdx++;
+      showPlayBadge('2B', '#69f0ae');
+      if (isMyBat) { batter.gs.doubles++; batter.gs.hits++; batter.gs.rbi+=runs; batter.gs.atbats++; recordInnHit('home'); if(runs) recordInnRun('home',sim.inning,runs); }
+      else if(runs) recordInnRun('away',sim.inning,runs);
+    } else if (outcome==='H') {
+      if (sim.bases[2]) runs++;
+      sim.bases=[true,sim.bases[0],sim.bases[1]];
+      lt  = `◉ ${isMyBat?batter.name:'相手打者'}  安打！  ${zoneKey}`;
+      lt2 = `   ${pitch} ${pitchSpd}km/h${runs>0?`  → ${runs}点`:''}`;
+      lc  = 'lht'; sim.bIdx++;
+      showPlayBadge('HIT', '#69f0ae');
+      if (isMyBat) { batter.gs.hits++; batter.gs.rbi+=runs; batter.gs.atbats++; recordInnHit('home'); if(runs) recordInnRun('home',sim.inning,runs); }
+      else { recordInnHit('away'); if(runs) recordInnRun('away',sim.inning,runs); }
+    } else if (outcome==='BB') {
+      if (sim.bases[0]&&sim.bases[1]&&sim.bases[2]) runs=1;
+      const nb=[...sim.bases];
+      if(nb[0]&&nb[1])nb[2]=true; if(nb[0])nb[1]=true; nb[0]=true; sim.bases=nb;
+      lt  = `○ 四球  (${pitch} ${pitchSpd}km/h  ボール先行)`;
+      sim.bIdx++;
+      showPlayBadge('BB', '#00e5ff');
+      if (isMyBat) { batter.gs.bb++; batter.gs.rbi+=runs; if(runs) recordInnRun('home',sim.inning,runs); }
+      else { if(runs) recordInnRun('away',sim.inning,runs); if(pitcher) pitcher.gs.whip_bb++; }
+    } else {
+      sim.outs++;
+      const isK = strikeDesc !== '';
+      lt  = `✕ ${isMyBat?batter.name:'相手打者'}  ${isK?strikeDesc:zoneKey}`;
+      lt2 = `   ${pitch} ${pitchSpd}km/h  (${sim.outs}/3アウト)`;
+      lc  = 'lot'; sim.bIdx++;
+      showPlayBadge('OUT', '#ff4655');
+      if (isMyBat) { batter.gs.atbats++; if(isK) batter.gs.strikeouts++; }
+      if (!isMyBat&&pitcher) { if(isK) pitcher.gs.pk++; pitcher.gs.ip+=0.333; }
+    }
+    if (runs>0) {
+      if(isMyBat) sim.home+=runs;
+      else { sim.away+=runs; if(pitcher) pitcher.gs.er+=runs; }
+    }
+    if(isMyBat&&outcome!=='BB'&&pitcher) pitcher.gs.whip_h+=(outcome==='OUT'?0:1);
+
+    aLog(lt,lc); if(lt2) aLog(lt2,'linf');
+    updHUD(); updBases(); updInnTable();
+
+    // Ball animation then advance inning
+    const animOutcome = outcome==='OUT'&&strikeDesc!==''?'K':outcome;
+    animateBall(animOutcome, zoneKey, hrKey, () => {
+      if (sim.outs>=3) {
+        sim.outs=0; sim.bases=[false,false,false];
+        if(sim.half==='top') {
+          sim.half='bottom';
+          aLog(`────── ${sim.inning}回 裏 ──────`,'lev');
+        } else {
+          sim.half='top'; sim.inning++;
+          if(sim.inning>9) { if(sim.home!==sim.away||sim.inning>12){finSim();return;} }
+          aLog(`────── ${sim.inning}回 表 ──────`,'lev');
+        }
+      }
+      const el = document.getElementById('itag');
+      if(el) el.textContent=`// INNING ${sim.inning} ${sim.half==='top'?'TOP':'BOTTOM'}`;
+      updBases(); updHUD();
+      simTO = setTimeout(simStep, 520);
+    });
+  });
+}
+
+function updHUD() {
+  if (!curSim) return;
+  document.getElementById('hsc').textContent = curSim.home;
+  document.getElementById('asc').textContent = curSim.away;
+  // BSO lights
+  const balls   = document.querySelectorAll('#ball-lights .bso-dot');
+  const strikes = document.querySelectorAll('#strike-lights .bso-dot');
+  const outs    = document.querySelectorAll('#out-lights .bso-dot');
+  balls.forEach((d,i)   => { d.classList.toggle('on-b', i < (curSim.balls||0)); });
+  strikes.forEach((d,i) => { d.classList.toggle('on-s', i < (curSim.strikes||0)); });
+  outs.forEach((d,i)    => { d.classList.toggle('on-o', i < curSim.outs); });
+}
+
+function updBases() {
+  if (!curSim) return;
+  // SVG bases (big field)
+  const ids = ['base1','base2','base3'];
+  ids.forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) {
+      if (curSim.bases[i]) el.classList.add('base-on');
+      else el.classList.remove('base-on');
+    }
+  });
+  // Mini bases in info bar
+  ['mb1','mb2','mb3'].forEach((id,i) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.style.background  = curSim.bases[i] ? '#ffe082' : 'var(--panel2)';
+      el.style.borderColor = curSim.bases[i] ? '#ffb300' : 'var(--border-bright)';
+      el.style.boxShadow   = curSim.bases[i] ? '0 0 8px #ffe082' : 'none';
+    }
+  });
+}
+
+// Hit zone coordinates on the SVG field (viewBox 400x360)
+const ZONE_COORDS = {
+  '左翼線':    {x:55,  y:110},
+  '左中間':    {x:110, y:55},
+  'センター':  {x:200, y:30},
+  '右中間':    {x:290, y:55},
+  '右翼線':    {x:345, y:110},
+  '内野安打':  {x:160, y:240},
+  '二塁打':    {x:200, y:30},
+};
+
+const OUT_COORDS = {
+  '一塁ゴロ':   {x:275, y:198},
+  '二塁ゴロ':   {x:200, y:119},
+  '遊撃ゴロ':   {x:145, y:185},
+  '三塁ゴロ':   {x:125, y:198},
+  '投ゴロ':     {x:200, y:195},
+  '中飛':       {x:200, y:55},
+  '左飛':       {x:95,  y:90},
+  '右飛':       {x:305, y:90},
+  'ライナー内野':{x:200, y:200},
+};
+
+const HR_COORDS = {
+  'センター方向':    {x:200, y:18},
+  '左中間スタンド':  {x:90,  y:35},
+  '右中間スタンド':  {x:310, y:35},
+  'レフトポール際':  {x:30,  y:80},
+  'ライトスタンド上段':{x:370, y:80},
+};
+
+// Pitch zone positions (9 zones + ball zones outside)
+function pitchZonePos(pitch) {
+  const zones = [
+    {x:18,y:15},{x:44,y:15},{x:70,y:15},
+    {x:18,y:45},{x:44,y:45},{x:70,y:45},
+    {x:18,y:72},{x:44,y:72},{x:70,y:72},
+  ];
+  // bias: control pitch more in strike zone, otherwise outside
+  const isStrike = Math.random() < 0.55;
+  if (isStrike) {
+    const z = zones[Math.floor(Math.random()*zones.length)];
+    return {x: z.x + Math.random()*10-5, y: z.y + Math.random()*8-4, strike:true};
+  } else {
+    // outside zone
+    const side = Math.floor(Math.random()*4);
+    const ox = side===0?-5:side===1?88:Math.random()*80;
+    const oy = side===2?-5:side===3?98:Math.random()*90;
+    return {x:ox, y:oy, strike:false};
+  }
+}
+
+function animatePitch(pitchName, pitchSpd, onDone) {
+  // Show pitch zone
+  const wrap = document.getElementById('pitch-zone-wrap');
+  const dot  = document.getElementById('pitch-dot');
+  if (!wrap || !dot) { onDone && onDone(); return; }
+
+  const pos = pitchZonePos(pitchName);
+  dot.setAttribute('cx', pos.x);
+  dot.setAttribute('cy', pos.y);
+  dot.setAttribute('fill', pos.strike ? '#ff4655' : '#00e5ff');
+  dot.style.opacity = '0';
+  wrap.style.opacity = '1';
+
+  // Update pitch info
+  const pi = document.getElementById('pitch-info');
+  if (pi) pi.textContent = `${pitchName}  ${pitchSpd}km/h`;
+
+  // Flash dot
+  setTimeout(() => {
+    dot.style.opacity = '1';
+    dot.style.transition = 'opacity .15s';
+  }, 80);
+
+  setTimeout(() => {
+    onDone && onDone();
+  }, 340);
+}
+
+function animateBall(outcome, zoneKey, hrKey, onDone) {
+  const svg = document.getElementById('field-svg');
+  const ballDot = document.getElementById('ball-dot');
+  const hitFlash = document.getElementById('hit-flash');
+  const hrArc = document.getElementById('hr-arc');
+  if (!svg || !ballDot) { onDone && onDone(); return; }
+
+  const homeX = 200, homeY = 310;
+
+  if (outcome === 'HR') {
+    const dest = HR_COORDS[hrKey] || {x:200,y:18};
+    // Draw arc path
+    const cpX = homeX + (dest.x - homeX) * 0.3;
+    const cpY = homeY - 120;
+    hrArc.setAttribute('d', `M${homeX},${homeY} Q${cpX},${cpY} ${dest.x},${dest.y}`);
+    hrArc.style.opacity = '1';
+    hrArc.style.stroke = '#ffe082';
+
+    ballDot.setAttribute('cx', homeX);
+    ballDot.setAttribute('cy', homeY);
+    ballDot.style.opacity = '1';
+    ballDot.setAttribute('fill', '#ffe082');
+
+    let t = 0;
+    const steps = 20;
+    const interval = setInterval(() => {
+      t++;
+      const frac = t / steps;
+      const bx = (1-frac)*(1-frac)*homeX + 2*(1-frac)*frac*cpX + frac*frac*dest.x;
+      const by = (1-frac)*(1-frac)*homeY + 2*(1-frac)*frac*cpY + frac*frac*dest.y;
+      ballDot.setAttribute('cx', bx);
+      ballDot.setAttribute('cy', by);
+      if (t >= steps) {
+        clearInterval(interval);
+        // Flash at landing
+        hitFlash.setAttribute('cx', dest.x);
+        hitFlash.setAttribute('cy', dest.y);
+        hitFlash.setAttribute('fill', 'rgba(255,224,130,0.4)');
+        hitFlash.setAttribute('stroke', '#ffe082');
+        hitFlash.style.opacity = '1';
+        setTimeout(() => {
+          hitFlash.style.opacity = '0';
+          ballDot.style.opacity = '0';
+          hrArc.style.opacity = '0';
+          onDone && onDone();
+        }, 400);
+      }
+    }, 22);
+
+  } else if (outcome === 'H' || outcome === '2B') {
+    const dest = ZONE_COORDS[zoneKey] || ZONE_COORDS['センター'];
+    ballDot.setAttribute('cx', homeX);
+    ballDot.setAttribute('cy', homeY);
+    ballDot.setAttribute('fill', '#69f0ae');
+    ballDot.style.opacity = '1';
+
+    let t = 0; const steps = 14;
+    const interval = setInterval(() => {
+      t++;
+      const frac = t / steps;
+      const bx = homeX + (dest.x - homeX) * frac;
+      const by = homeY + (dest.y - homeY) * frac;
+      ballDot.setAttribute('cx', bx);
+      ballDot.setAttribute('cy', by);
+      if (t >= steps) {
+        clearInterval(interval);
+        hitFlash.setAttribute('cx', dest.x);
+        hitFlash.setAttribute('cy', dest.y);
+        hitFlash.setAttribute('fill', 'rgba(105,240,174,0.3)');
+        hitFlash.setAttribute('stroke', '#69f0ae');
+        hitFlash.style.opacity = '1';
+        setTimeout(() => {
+          hitFlash.style.opacity = '0';
+          ballDot.style.opacity = '0';
+          onDone && onDone();
+        }, 350);
+      }
+    }, 28);
+
+  } else if (outcome === 'OUT') {
+    const dest = OUT_COORDS[zoneKey] || OUT_COORDS['二塁ゴロ'];
+    ballDot.setAttribute('cx', homeX);
+    ballDot.setAttribute('cy', homeY);
+    ballDot.setAttribute('fill', '#ff8a80');
+    ballDot.style.opacity = '1';
+
+    let t = 0; const steps = 10;
+    const interval = setInterval(() => {
+      t++;
+      const frac = t / steps;
+      ballDot.setAttribute('cx', homeX + (dest.x - homeX) * frac);
+      ballDot.setAttribute('cy', homeY + (dest.y - homeY) * frac);
+      if (t >= steps) {
+        clearInterval(interval);
+        setTimeout(() => {
+          ballDot.style.opacity = '0';
+          onDone && onDone();
+        }, 200);
+      }
+    }, 30);
+  } else {
+    // BB or K - no ball animation
+    onDone && onDone();
+  }
+}
+
+function showPlayBadge(text, color) {
+  const el = document.getElementById('play-badge');
+  if (!el) return;
+  el.textContent = text;
+  el.style.background = color;
+  el.style.color = '#000';
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = 'badgeIn 1.6s ease forwards';
+}
+
+function updBatterStrip(batter, pitcher) {
+  const bs = document.getElementById('batter-strip-inner');
+  const ps = document.getElementById('pitcher-strip-inner');
+  if (batter && bs) {
+    const avg = batter.gs.atbats > 0 ? (batter.gs.hits/batter.gs.atbats).toFixed(3).replace('0.','.') : '.---';
+    bs.innerHTML = `<div style="font-weight:700;font-size:13px;color:#fff;margin-bottom:4px">#${batter.number} ${batter.name}</div>
+      <div style="display:flex;gap:10px">
+        <span>打率 <b style="color:var(--gold)">${avg}</b></span>
+        <span>HR <b style="color:var(--red)">${batter.gs.hr}</b></span>
+        <span>打点 <b>${batter.gs.rbi}</b></span>
+      </div>
+      <div class="mono" style="font-size:8px;color:var(--text-muted);margin-top:3px">${batter.position} // ${batter.meta.special!=='なし'?'⭐'+batter.meta.special:batter.meta.personality}</div>`;
+  }
+  if (pitcher && ps) {
+    const era = pitcher.gs.ip > 0 ? (pitcher.gs.er*9/pitcher.gs.ip).toFixed(2) : '-.--';
+    ps.innerHTML = `<div style="font-weight:700;font-size:13px;color:#fff;margin-bottom:4px">#${pitcher.number} ${pitcher.name}</div>
+      <div style="display:flex;gap:10px">
+        <span>防御率 <b style="color:var(--gold)">${era}</b></span>
+        <span>K <b style="color:var(--cyan)">${pitcher.gs.pk}</b></span>
+        <span>${pitcher.gs.wins}勝${pitcher.gs.losses}敗</span>
+      </div>
+      <div class="mono" style="font-size:8px;color:var(--text-muted);margin-top:3px">${pitcher.position} // ${pitcher.meta.special!=='なし'?'⭐'+pitcher.meta.special:pitcher.meta.personality}</div>`;
+  }
+}
+
+function aLog(t, c='') {
+  const e = document.getElementById('slog');
+  const d = document.createElement('div');
+  d.className = 'll ' + c; d.textContent = t;
+  e.appendChild(d); e.scrollTop = e.scrollHeight;
+}
+
+function finSim() {
+  if (!curSim) return;
+  clearTimeout(simTO); curSim.done = true;
+  const res = {home:curSim.home, away:curSim.away, opp:curSim.awayName, ot:curSim.ot};
+  const w = res.home > res.away, dr = res.home === res.away;
+  aLog(`━━━━━━ 試合終了 ━━━━━━`, 'lev');
+  aLog(`⬡ FINAL  星座ベアーズ ${res.home} : ${res.away}  ${res.opp}  —  ${w?'✅ WIN':dr?'🤝 DRAW':'❌ LOSS'}`, w?'lht':dr?'lev':'lot');
+
+  // Show restart button inside sarea
+  const slog = document.getElementById('slog');
+  if (slog) {
+    const d = document.createElement('div');
+    d.style.cssText = 'padding:8px 0;text-align:center';
+    d.innerHTML = `<button class="vb vbg vbs" onclick="resetMatch()" style="margin-top:6px">↩ 試合設定に戻る</button>`;
+    slog.appendChild(d);
+    slog.scrollTop = slog.scrollHeight;
+  }
+
+  recordResult(res);
+  applyMatchStats(res);
+  G.players.filter(p=>p.tier==='ichi').forEach(p => {
+    p.condition = Math.max(10, p.condition - Math.floor(Math.random()*13+3));
+  });
+  renderR(); renderHistory(); renderST(); renderPL(); renderCL(); updateHeaderRecord();
+}
+
+function resetMatch() {
+  document.getElementById('pregame').style.display = 'block';
+  document.getElementById('sarea').style.display = 'none';
+  curSim = null;
+  if (simTO) clearTimeout(simTO);
+}
+
+function applyMatchStats(res) {
+  // Update pitcher game stats
+  const sp = G.players.find(p=>p.tier==='ichi'&&p.position==='SP');
+  if (sp) {
+    sp.gs.pgames++;
+    if (res.home > res.away) sp.gs.wins++;
+    else if (res.home < res.away) sp.gs.losses++;
+  }
+  const cl = G.players.find(p=>p.tier==='ichi'&&p.position==='CL');
+  if (cl && res.home > res.away) { cl.gs.saves++; cl.gs.pgames++; }
+  // Update batter game count
+  G.players.filter(p=>p.tier==='ichi'&&!['SP','RP','CL'].includes(p.position)).forEach(p => { p.gs.games++; });
+}
+
+// ═══════════════════════════════════════════════
+// STANDINGS
+// ═══════════════════════════════════════════════
+function renderST() {
+  if (!G.standings) return;
+  const rdr = (lg, id) => {
+    const ts = [...G.standings.filter(t=>t.league===lg)].sort((a,b) => {
+      const ra = a.wins/(a.wins+a.losses+0.001);
+      const rb = b.wins/(b.wins+b.losses+0.001);
+      return rb - ra;
+    });
+    const ld = ts[0];
+    document.getElementById(id).innerHTML = ts.map((t,i) => {
+      const g = t.wins+t.losses+t.draws;
+      const pct = g>0 ? (t.wins/g).toFixed(3).replace('0.','.') : '.---';
+      const gb = i===0 ? '-' : ((ld.wins-ld.losses-t.wins+t.losses)/2).toFixed(1);
+      const rc = i===0?'r1':i===1?'r2':i===2?'r3':'';
+      return `<tr class="${t.myTeam?'my-row':''}"><td class="${rc}">${i+1}</td><td class="${rc}">${t.abbr}${t.myTeam?' ★':''}</td><td>${g}</td><td>${t.wins}</td><td>${t.losses}</td><td>${t.draws}</td><td>${pct}</td><td>${gb}</td></tr>`;
+    }).join('');
+  };
+  rdr('central','ctb'); rdr('pacific','ptb');
+  const my = G.standings.find(t=>t.myTeam);
+  if (my) {
+    const g = my.wins+my.losses+my.draws;
+    const pct = g>0 ? (my.wins/g).toFixed(3) : '.---';
+    document.getElementById('mycard').innerHTML = `
+      <div class="fxb"><div>
+        <div class="vct">// HOSHIZA BEARS</div>
+        <div class="mono xs tm">PACIFIC LEAGUE · ${G.season} SEASON · WEEK ${G.week}</div>
+      </div>
+      <div class="rj fw7" style="font-size:20px;color:var(--red)">${my.wins}W ${my.losses}L ${my.draws}D</div>
+      <div style="text-align:right"><div class="mono xs tm">WIN PCT</div><div class="rj fw7" style="font-size:26px;color:var(--gold)">${pct}</div></div></div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// MATCH HISTORY & RECORD
+// ═══════════════════════════════════════════════
+function recordResult(res) {
+  const w = res.home > res.away, dr = res.home === res.away;
+  G.matchHistory.unshift({...res, win:w, draw:dr, date:`${G.season}/W${G.week}`});
+  if (G.matchHistory.length > 40) G.matchHistory.pop();
+  const my = G.standings && G.standings.find(t=>t.myTeam);
+  if (my) { if(w) my.wins++; else if(dr) my.draws++; else my.losses++; }
+  G.totalGames++;
+}
+
+function renderHistory() {
+  const el = document.getElementById('mhist'); if (!el) return;
+  if (!G.matchHistory.length) { el.innerHTML='<div class="mono xs tm" style="padding:12px 14px">// NO MATCHES YET</div>'; return; }
+  el.innerHTML = G.matchHistory.map(m => `
+    <div class="mrec">
+      <div class="rbadge r${m.win?'W':m.draw?'D':'L'}">${m.win?'WIN':m.draw?'DRW':'LOS'}</div>
+      <div class="msc">${m.home}:${m.away}</div>
+      <div><div class="mvs">vs</div><div class="mopp">${m.opp}</div></div>
+      <div class="mdt">${m.date}</div>
+    </div>`).join('');
+}
+
+function updateHeaderRecord() {
+  const my = G.standings && G.standings.find(t=>t.myTeam);
+  if (my) document.getElementById('hRecord').textContent = `${my.wins}W ${my.losses}L ${my.draws}D`;
+}
+
+// ═══════════════════════════════════════════════
+// SCHEDULE
+// ═══════════════════════════════════════════════
+function renderSchedule() {
+  const el = document.getElementById('wrow'); if (!el) return;
+  const days = ['月','火','水','木','金','土','日'];
+  el.innerHTML = (G.weekSchedule || []).map((d,i) => {
+    const result = d.result;
+    let inner = '';
+    if (!d.opp) {
+      inner = `<div class="mono" style="font-size:8px;color:var(--text-muted)">OFF</div>`;
+    } else if (result) {
+      const col = result.win ? 'var(--green)' : result.draw ? 'var(--gold)' : 'var(--red)';
+      inner = `<div style="font-family:'Share Tech Mono';font-size:8px;color:${col}">${result.home}:${result.away}</div>
+               <div class="wg" style="background:${col}15;color:${col}">${result.win?'WIN':result.draw?'DRW':'LOS'}</div>`;
+    } else {
+      inner = `<div class="wg">vs ${d.opp.abbr}</div>`;
+    }
+    return `<div class="wcell"><div class="wdn">${days[i]}</div>${inner}</div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// WEEK ADVANCE
+// ═══════════════════════════════════════════════
+function advanceWeek() {
+  if (G.week > G.maxWeeks) { notif('シーズン終了です！','🏆'); return; }
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  if (ic.length < 9) { notif('一軍に9名以上必要です','❌'); return; }
+
+  // Simulate all scheduled games this week
+  const results = [];
+  G.weekSchedule.forEach(day => {
+    if (!day.opp || day.played) return;
+    const res = fastSim(day.opp.abbr);
+    day.played = true;
+    day.result = res;
+    results.push({day: day.day, ...res});
+  });
+
+  // Simulate OTHER teams' games against each other
+  const others = G.standings.filter(t => !t.myTeam);
+  for (let i = 0; i < others.length; i += 2) {
+    if (i+1 < others.length) {
+      const t1 = others[i], t2 = others[i+1];
+      const numGames = Math.floor(Math.random()*3)+3;
+      for (let g = 0; g < numGames; g++) {
+        const p1 = t1.power + Math.random()*10-5;
+        const p2 = t2.power + Math.random()*10-5;
+        if (p1 > p2) t1.wins++; else if (p2 > p1) t2.wins++; else { t1.draws++; t2.draws++; }
+        t1.losses += (p1>p2?0:1); t2.losses += (p2>p1?0:1);
+      }
+    }
+  }
+
+  // Recover condition between games
+  G.players.filter(p=>p.tier==='ichi').forEach(p => {
+    p.condition = Math.min(100, p.condition + Math.floor(Math.random()*12)+5);
+  });
+  G.players.filter(p=>p.tier==='ni').forEach(p => {
+    p.condition = Math.min(100, p.condition + Math.floor(Math.random()*18)+8);
+    // Auto-growth for minor leaguers
+    if (Math.random() < 0.15) {
+      const stats = ['contact','power','speed','defense','stamina','control','arm'];
+      const k = stats[Math.floor(Math.random()*stats.length)];
+      p.params[k] = Math.min(100, p.params[k]+1);
+    }
+  });
+
+  G.week++;
+  document.getElementById('hWeek').textContent = `W${String(G.week).padStart(2,'0')}`;
+
+  // Generate next week schedule
+  initWeekSchedule();
+
+  renderST(); renderR(); renderHistory(); renderSchedule();
+  showWeekResultOverlay(results);
+}
+
+function showWeekResultOverlay(results) {
+  const my = G.standings.find(t=>t.myTeam);
+  const w=my.wins, l=my.losses, d=my.draws;
+  const thisW = results.filter(r=>r.home>r.away).length;
+  const thisL = results.filter(r=>r.home<r.away).length;
+
+  const div = document.createElement('div');
+  div.className = 'wov';
+  div.id = 'week-ov';
+  div.innerHTML = `
+    <div class="wov-title">WEEK ${G.week-1} RESULTS</div>
+    <div class="wov-sub">${thisW}勝 ${thisL}敗 // 通算 ${w}勝 ${l}敗 ${d}分</div>
+    <div class="wov-results">
+      <div class="mono xs tm" style="margin-bottom:10px">// MATCH RESULTS</div>
+      ${results.map(r => {
+        const col = r.home>r.away ? 'var(--green)' : r.home<r.away ? 'var(--red)' : 'var(--gold)';
+        return `<div class="wov-match">
+          <div class="rbadge r${r.home>r.away?'W':r.home<r.away?'L':'D'}" style="margin-right:4px">${r.home>r.away?'WIN':r.home<r.away?'LOS':'DRW'}</div>
+          <div class="rj fw7" style="font-size:18px;color:${col}">${r.home}:${r.away}</div>
+          <div class="mono xs tm" style="margin-left:8px">vs ${r.opp}</div>
+          <div class="mono xs" style="margin-left:auto;color:var(--text-dim)">${r.day}曜</div>
+        </div>`;
+      }).join('')}
+    </div>
+    <button class="vb vbp" onclick="document.getElementById('week-ov').remove()">▶ CONTINUE</button>`;
+  document.body.appendChild(div);
+  div.onclick = e => { if(e.target===div) div.remove(); };
+}
+
+// ═══════════════════════════════════════════════
+// TRAINING
+// ═══════════════════════════════════════════════
+function doTrain(tp, playerId) {
+  const costs = {power:5000000,contact:5000000,speed:3000000,defense:3000000,stamina:4000000,mental:6000000};
+  const indivCosts = {power:800000,contact:800000,speed:500000,defense:500000,stamina:600000,mental:1000000};
+  const isIndiv = playerId !== null && playerId !== undefined;
+  const cost = isIndiv ? indivCosts[tp] : costs[tp];
+
+  if (G.money < cost) { notif('予算不足です','❌'); return; }
+
+  let targets;
+  if (isIndiv) {
+    const p = G.players.find(x=>x.id===playerId);
+    if (!p) { notif('選手が見つかりません','❌'); return; }
+    targets = [p];
+  } else {
+    targets = G.players.filter(p=>p.tier==='ichi');
+    if (!targets.length) { notif('一軍選手がいません','❌'); return; }
+  }
+
+  G.money -= cost; updBudget();
+  let n = 0;
+  targets.forEach(p => {
+    const chance = isIndiv ? 0.9 : 0.7;
+    if (Math.random() < chance) {
+      const gain = isIndiv
+        ? Math.floor(Math.random()*8)+6  // individual: higher gain
+        : Math.floor(Math.random()*6)+5;
+      p.params[tp] = Math.min(100, p.params[tp] + gain);
+      const ip2 = ['SP','RP','CL'].includes(p.position);
+      p.params.overall = Math.round(ip2
+        ? (p.params.control*.3+p.params.stamina*.25+p.params.arm*.25+p.params.mental*.15+p.params.fielding*.05)
+        : (p.params.contact*.25+p.params.power*.2+p.params.speed*.15+p.params.defense*.15+p.params.eye*.15+p.params.fielding*.1));
+      n++;
+      if (isIndiv) {
+        // refresh individual panel
+        renderTrainPlayerDetail(playerId);
+      }
+    }
+  });
+  renderR(); renderCL();
+  if (isIndiv && n > 0) {
+    const p = targets[0];
+    notif(`${p.name} // ${tp.toUpperCase()} +UP！`,'💪');
+  } else if (isIndiv && n === 0) {
+    notif('今日は効果がなかった...','😓');
+  } else {
+    notif(`TEAM TRAINING // ${n}名が能力アップ`,'💪');
+  }
+}
+
+// ── INDIVIDUAL TRAINING UI ──
+function trMode(mode, el) {
+  document.querySelectorAll('#page-training .vtab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tr-team').style.display       = mode==='team'       ? 'block' : 'none';
+  document.getElementById('tr-individual').style.display = mode==='individual' ? 'block' : 'none';
+  document.getElementById('tr-manage').style.display     = mode==='manage'     ? 'block' : 'none';
+  if (mode === 'individual') renderTrainPlayerList();
+  if (mode === 'manage') { renderPL(); renderCL(); }
+}
+
+function renderTrainPlayerList() {
+  const el = document.getElementById('tr-player-list'); if (!el) return;
+  const ic = G.players.filter(p=>p.tier==='ichi');
+  if (!ic.length) { el.innerHTML='<div class="mono xs tm" style="padding:14px">// 一軍選手なし</div>'; return; }
+  el.innerHTML = ic.map(p => {
+    const clr = PC[p.position]||'#ff4655';
+    const cc = p.condition>=80?'#69f0ae':p.condition>=50?'#ffe082':'#ff4655';
+    return `<div id="trpl-${p.id}" class="tr-prow" onclick="renderTrainPlayerDetail(${p.id})" style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s">
+      <div style="font-family:'Rajdhani';font-weight:700;font-size:18px;color:${clr};min-width:24px;text-align:center">${p.number}</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px">${p.name}</div>
+        <div style="font-family:'Share Tech Mono';font-size:8px;color:var(--text-muted)">${p.position} OVR:${p.params.overall}</div>
+      </div>
+      <div style="font-family:'Share Tech Mono';font-size:9px;color:${cc}">${p.condition}%</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTrainPlayerDetail(pid) {
+  // Highlight selected row
+  document.querySelectorAll('.tr-prow').forEach(r => r.style.background='');
+  const row = document.getElementById('trpl-'+pid);
+  if (row) row.style.background = 'var(--surface)';
+
+  const el = document.getElementById('tr-player-detail'); if (!el) return;
+  const p = G.players.find(x=>x.id===pid); if (!p) return;
+  const clr = PC[p.position]||'#ff4655';
+  const ip = ['SP','RP','CL'].includes(p.position);
+
+  // Which stats are most relevant for this position
+  const relevantStats = ip
+    ? [{k:'control',l:'CONTROL',c:'#26c6da'},{k:'arm',l:'ARM/VELO',c:'#f48fb1'},{k:'stamina',l:'STAMINA',c:'#ffb300'},{k:'mental',l:'MENTAL',c:'#ffe082'},{k:'fielding',l:'FIELDING',c:'#b39ddb'}]
+    : [{k:'contact',l:'CONTACT',c:'#69f0ae'},{k:'power',l:'POWER',c:'#ff4655'},{k:'speed',l:'SPEED',c:'#4fc3f7'},{k:'defense',l:'DEFENSE',c:'#ce93d8'},{k:'eye',l:'EYE',c:'#a5d6a7'},{k:'stamina',l:'STAMINA',c:'#ffb300'}];
+
+  const trainDefs = [
+    {key:'power',icon:'💪',label:'POWER',cost:'¥80万',color:'#ff4655'},
+    {key:'contact',icon:'🎯',label:'CONTACT',cost:'¥80万',color:'#69f0ae'},
+    {key:'speed',icon:'⚡',label:'SPEED',cost:'¥50万',color:'#4fc3f7'},
+    {key:'defense',icon:'🛡️',label:'DEFENSE',cost:'¥50万',color:'#ce93d8'},
+    {key:'stamina',icon:'🏃',label:'STAMINA',cost:'¥60万',color:'#ffb300'},
+    {key:'mental',icon:'🧠',label:'MENTAL',cost:'¥100万',color:'#ffe082'},
+  ];
+
+  const cc = p.condition>=80?'#69f0ae':p.condition>=50?'#ffe082':'#ff4655';
+
+  el.innerHTML = `
+    <div class="vct"># ${p.number} ${p.name}</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div style="font-family:'Rajdhani';font-weight:700;font-size:44px;color:${clr};text-shadow:0 0 24px ${clr};line-height:1">${p.params.overall}</div>
+      <div>
+        <div style="font-family:'Rajdhani';font-weight:700;font-size:13px;color:#fff">${PL[p.position]||p.position}</div>
+        <div class="mono xs tm">AGE ${p.age} // GRADE ${gr(p.params.overall)}</div>
+        <div class="fxc gap6" style="margin-top:4px">
+          <div class="cb" style="width:80px"><div class="cb-f" style="width:${p.condition}%;background:${cc}"></div></div>
+          <div class="mono xs" style="color:${cc}">COND ${p.condition}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="divl"></div>
+    <div class="mono xs tm" style="margin-bottom:8px">// PARAMETERS</div>
+    ${relevantStats.map(d=>`<div class="prow">
+      <div class="prow-n">${d.l}</div>
+      <div class="prow-b"><div class="prow-bf" style="width:${p.params[d.k]}%;background:${d.c}"></div></div>
+      <div class="prow-v" style="color:${gc(p.params[d.k])}">${p.params[d.k]}</div>
+    </div>`).join('')}
+    <div class="divl"></div>
+    <div class="mono xs tm" style="margin-bottom:8px">// INDIVIDUAL TRAINING  <span style="color:var(--text-dim)">成功率90% / 高効果</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+      ${trainDefs.map(t=>`
+        <div class="tcard" onclick="doTrain('${t.key}',${p.id})" style="display:flex;align-items:center;gap:8px;text-align:left;padding:10px 12px">
+          <div style="font-size:18px">${t.icon}</div>
+          <div style="flex:1">
+            <div class="tname" style="font-size:12px">${t.label}</div>
+            <div style="font-family:'Share Tech Mono';font-size:8px;color:${t.color}">現在: ${p.params[t.key]}</div>
+          </div>
+          <div class="tcost" style="margin-top:0;font-size:9px">${t.cost}</div>
+        </div>`).join('')}
+    </div>
+    <div style="margin-top:10px">
+      ${p.tier==='ichi'
+        ?`<button class="vb vbg vbs" onclick="demote(${p.id})">▼ 二軍降格</button>`
+        :`<button class="vb vbp vbs" onclick="promote(${p.id})">▲ 一軍昇格</button>`}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// STATS TABLE
+// ═══════════════════════════════════════════════
+function stTab(t, el) {
+  curST = t;
+  document.querySelectorAll('#page-stats .vtab').forEach(x=>x.classList.remove('active'));
+  el.classList.add('active'); renderSTT();
+}
+
+function renderSTT() {
+  const tb = document.getElementById('stbl'); if (!tb) return;
+  const ps = G.players;
+  if (!ps.length) { tb.innerHTML='<thead><tr><th class="mono xs">// NO DATA</th></tr></thead>'; return; }
+  const th = hs => `<thead><tr>${hs.map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
+  if (curST === 'batting') {
+    const bs = ps.filter(p=>!['SP','RP','CL'].includes(p.position)).sort((a,b)=>{
+      const aa = a.gs.atbats>0?a.gs.hits/a.gs.atbats:0;
+      const bb2 = b.gs.atbats>0?b.gs.hits/b.gs.atbats:0;
+      return bb2-aa;
+    });
+    tb.innerHTML = th(['PLAYER','POS','G','AVG','OBP','HR','RBI','H','2B','BB','K','OVR']) +
+      `<tbody>${bs.map(p=>{
+        const avg = p.gs.atbats>0?(p.gs.hits/p.gs.atbats).toFixed(3).replace('0.','.'):'.---';
+        const obp = p.gs.atbats+p.gs.bb>0?((p.gs.hits+p.gs.bb)/(p.gs.atbats+p.gs.bb)).toFixed(3).replace('0.','.'):'.---';
+        return `<tr><td class="fw7">${p.name}</td><td class="mono xs tm">${p.position}</td><td>${p.gs.games}</td><td class="tg">${avg}</td><td>${obp}</td><td class="tr">${p.gs.hr}</td><td>${p.gs.rbi}</td><td>${p.gs.hits}</td><td>${p.gs.doubles}</td><td>${p.gs.bb}</td><td>${p.gs.strikeouts}</td><td class="g${gr(p.params.overall)}">${p.params.overall}</td></tr>`;
+      }).join('')}</tbody>`;
+  } else if (curST === 'pitching') {
+    const pts = ps.filter(p=>['SP','RP','CL'].includes(p.position)).sort((a,b)=>b.gs.wins-a.gs.wins);
+    tb.innerHTML = th(['PLAYER','POS','G','W','L','SV','ERA','IP','K','WHIP','OVR']) +
+      `<tbody>${pts.map(p=>{
+        const era = p.gs.ip>0?(p.gs.er*9/p.gs.ip).toFixed(2):'-.--';
+        const whip = p.gs.ip>0?((p.gs.whip_bb+p.gs.whip_h)/p.gs.ip).toFixed(2):'-.--';
+        return `<tr><td class="fw7">${p.name}</td><td class="mono xs tm">${p.position}</td><td>${p.gs.pgames}</td><td class="tgr">${p.gs.wins}</td><td class="tr">${p.gs.losses}</td><td class="tg">${p.gs.saves}</td><td>${era}</td><td>${p.gs.ip.toFixed(1)}</td><td>${p.gs.pk}</td><td>${whip}</td><td class="g${gr(p.params.overall)}">${p.params.overall}</td></tr>`;
+      }).join('')}</tbody>`;
+  } else {
+    tb.innerHTML = th(['PLAYER','POS','DEF','ARM','FLD','SPD','OVR']) +
+      `<tbody>${ps.map(p=>`<tr><td class="fw7">${p.name}</td><td class="mono xs tm">${p.position}</td><td class="g${gr(p.params.defense)}">${p.params.defense}</td><td class="g${gr(p.params.arm)}">${p.params.arm}</td><td class="g${gr(p.params.fielding)}">${p.params.fielding}</td><td class="g${gr(p.params.speed)}">${p.params.speed}</td><td class="g${gr(p.params.overall)}">${p.params.overall}</td></tr>`).join('')}</tbody>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════
+function sp(name, el) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  (el || document.querySelector(`[data-p="${name}"]`)).classList.add('active');
+  if (name==='standings') renderST();
+  if (name==='schedule') { renderSchedule(); renderHistory(); }
+  if (name==='stats') renderSTT();
+  if (name==='training') { renderPL(); renderCL(); }
+}
+
+let _nt;
+function notif(msg, icon='◈') {
+  const el = document.getElementById('notif');
+  el.innerHTML = `<span style="color:var(--red);margin-right:7px">${icon}</span>${msg}`;
+  el.style.display = 'block';
+  clearTimeout(_nt);
+  _nt = setTimeout(() => el.style.display='none', 3200);
+}
+
+function updBudget() {
+  document.getElementById('hBudget').textContent = `¥${(G.money/1e8).toFixed(1)}B`;
+}
+
+
+// ═══════════════════════════════════════════════
+// FULLSCREEN
+// ═══════════════════════════════════════════════
+function toggleFS() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(()=>{});
+  } else {
+    document.exitFullscreen();
+  }
+}
+document.addEventListener('fullscreenchange', () => {
+  const btn = document.getElementById('fsbtn');
+  if (btn) btn.textContent = document.fullscreenElement ? '⊠' : '⛶';
+});
+
+// ═══════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════
+initStandings();
+initSamplePlayers();
+initWeekSchedule();
+renderR();
+renderHistory();
+renderST();
+renderSchedule();
+updBudget();
+updateHeaderRecord();
+</script>
+</body>
+</html>
